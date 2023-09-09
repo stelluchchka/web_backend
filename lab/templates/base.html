@@ -1,0 +1,17 @@
+{% load static %}
+<!doctype html>
+<html lang="en" class="h-100">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+  <title>{% block title %}{% endblock %}</title>
+</head>
+
+<body style="background-color: #f6f4f1">
+    <div style="background-color: #f7f2eb">
+      <h1>Заявки для поваров в быстром питании</h1>
+      <p>Присоединяйтесь к нашей команде и делайте вкусную кухню быстрого питания</p>
+    </div>
+    {% block content %}{% endblock %}
+</body>
+</html>
