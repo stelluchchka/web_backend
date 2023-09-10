@@ -8,9 +8,10 @@
 }
 .card {
   background-color: #ffffff;
-  width: 309px; 
-  border-radius: 5%;
+  width: 310px; 
+  border-radius: 5px;
   margin-bottom: 10%;
+  box-shadow: 0 0 10px #3c3a3a;
 }
 .header-img {
   width: 90%;
