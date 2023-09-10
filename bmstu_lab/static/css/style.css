@@ -9,12 +9,12 @@
   box-shadow: 0 0 10px #3c3a3a;
 }
 .header-img {
-  width: 90%;
-  height: 300px;
-  margin-bottom: 10px; 
-  border-radius: 5%; 
-  margin-left: 5%; 
-  margin-right: 5%; 
+  width: 50%;
+  height: 70%;
+  margin-top: 10px; 
+  /* margin-left: 5%; 
+  margin-right: 5%;  */
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
-  /* border-radius: 50% 20% / 10% 40%; */
+  border-radius: 20% 20% / 50% 20%;
+  /* border-radius: 5%;  */
 }
