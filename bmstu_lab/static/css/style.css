@@ -1,5 +1,5 @@
 .order-text {
-    font-size: 80px;
+    font-size: 10px;
   }
 .card {
   background-color: #ffffff;
@@ -17,4 +17,14 @@
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
   border-radius: 20% 20% / 50% 20%;
   /* border-radius: 5%;  */
+}
+.submit-btn {
+  color: white; 
+  background-color: #f53100; 
+  border: none; 
+  height: 60px; 
+  font-size: medium; 
+  border-radius: 10px 10px 10px 10px; 
+  width: 200px; 
+  margin-left: 20px;
 }
