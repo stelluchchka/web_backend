@@ -3,16 +3,18 @@
 {% block title %}Список заказов{% endblock %}
 
 {% block content %}
+    <img class="header-img" src="https://w.forfun.com/fetch/f4/f4a884f56fe6e9f700a7173c504d0f9d.jpeg">
 
-    <div>
-      <img src="https://w.forfun.com/fetch/f4/f4a884f56fe6e9f700a7173c504d0f9d.jpeg" width="90%" height="300" style="margin-bottom: 30px; border-radius: 5%; margin-left: 5%; margin-right: 5%;">
+    <div style="height: 100px; margin-bottom: 20px;">
+        <form action="sendText" method="post" enctype="multipart/form-data" style="margin-left: 5%; margin-bottom: 3%;">
+            {% csrf_token %}
+            <input  name="chef" type="text" placeholder="chef" style="border: none; border-radius: 10px 0 0 10px; height: 60px; font-size: medium; margin-top: 20px;">
+            <input  name="text" type="text" placeholder="text" style="border: none; height: 60px; font-size: medium;">
+            <input  name="text2" type="text2" placeholder="text2" style="border: none; height: 60px; font-size: medium;">
+            <input  name="text3" type="text3" placeholder="text3" style="border: none; border-radius: 0 10px 10px 0; height: 60px; font-size: medium;">
+            <input type="submit" value="Submit" style="color: white; background-color: #FFA3AF; border: none; height: 60px; font-size: medium; border-radius: 10px 10px 10px 10px; width: 200px; margin-left: 20px;">
+        </form>
     </div>
-
-    <form action="sendText" method="post" enctype="multipart/form-data" style="margin-left: 5%; margin-bottom: 3%;">
-        {% csrf_token %}
-        <input name="text" type="text"><br><br>
-        <input type="submit" value="Submit" >
-    </form>
 
     <div style="display: flex; flex-wrap: wrap;">
         {% for order in data.orders %}
@@ -22,8 +24,5 @@
         {% empty %}
             Список пуст
         {% endfor %}
-    </div>
-
-
-
+    </div>   
 {% endblock %}

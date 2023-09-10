@@ -1,13 +1,23 @@
 .order-text {
-    font-size: 10px;
+    font-size: 80px;
   }
 .card-container {
     display: flex;
     flex-wrap: nowrap; /* если вы хотите, чтобы карточки не переносились на новую строку */
     gap: 10px; /* расстояние между карточками */
 }
-.my-card {
-  background-color: rgb(255, 255, 255); 
+.card {
+  background-color: #ffffff;
   width: 309px; 
+  border-radius: 5%;
   margin-bottom: 10%;
+}
+.header-img {
+  width: 90%;
+  height: 300px;
+  margin-bottom: 10px; 
+  border-radius: 5%; 
+  margin-left: 5%; 
+  margin-right: 5%; 
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
