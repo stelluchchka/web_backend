@@ -3,5 +3,25 @@
 {% block title %}Заказ №{{ data.id }}{% endblock %}
 
 {% block content %}
-    <div class="order-text">Информация о заказе №{{ data.id }}</div>
+<div style="background-color: #007CBE; height: 100%; width: 80%; margin-left: 10%;">
+    <button id ="back-btn" class="back-btn">< back</button>
+    <p style="text-align: left; border-radius: 10px;">
+        <img class="order-img" src = '{{ data.url }}'>
+    
+
+        <div >
+            <div class="order-title">заказ №{{ data.id }}</div>
+            <div class="order-text">
+                chef: sdsfdghgf rfgtfrde<br>
+                bla: <br>
+                bla: <br>
+            </div>        
+        </div>
+    </p>
+
+    <!-- <div style="background-color: #FBAF00; margin-right: 0; text-align: end; margin-top: 0%;">
+c
+    </div> -->
+
+</div>
 {% endblock %}

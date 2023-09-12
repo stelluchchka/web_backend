@@ -3,38 +3,33 @@
 {% block title %}Список заказов{% endblock %}
 
 {% block content %}
-    <div style="position: relative; background-color: #F5AB00; color: #ffffff; height: 400px; margin-bottom: 100px;">
+    <div style="position: relative; background-color: #F5AB00; color: #ffffff; height: 360px; margin-bottom: 50px;">
         <h7>**логотип</h7>
-        <h1 style="text-align: center; font-weight: 900; margin-top: 30px;"><big><big>Заявки для поваров в быстром питании</big></big></h1>
-        <h4 style="text-align: center; margin-bottom: 30px;">нереально крутой слоган</h4>
+        <h1 class="header-title"><big>ЗАЯВКИ ДЛЯ ПОВАРОВ В БЫСТРОМ ПИТАНИИ</big></h1>
+        <h4 style="text-align: center; margin-bottom: 30px; font-family: sans-serif;">нереально крутой слоган</h4>
 
         <div style="height: 100px; margin-bottom: 20px; text-align: center;">
             <form action="sendText" method="post" enctype="multipart/form-data" style="margin-left: 5%; margin-bottom: 3%;">
                 {% csrf_token %}
-                <input  name="name" type="text" placeholder="name" style="border: none; border-radius: 10px 0 0 10px; height: 60px; font-size: medium; margin-top: 20px;">
-                <input  name="chef" type="text" placeholder="chef" style="border: none; height: 60px; font-size: medium;">
-                <input  name="text2" type="text2" placeholder="text2" style="border: none; height: 60px; font-size: medium;">
-                <input  name="text3" type="text3" placeholder="text3" style="border: none; border-radius: 0 10px 10px 0; height: 60px; font-size: medium;">
-                <input class="submit-btn" type="submit" value="Submit">
+                <input  name="name" type="text" placeholder="name" class="order-filter" style="border-radius: 10px 0 0 10px; margin-top: 20px;">
+                <input  name="chef" type="text" placeholder="chef" class="order-filter">
+                <input  name="text2" type="text2" placeholder="text2" class="order-filter">
+                <input  name="text3" type="text3" placeholder="text3" class="order-filter" style="border-radius: 0 10px 10px 0;">
+                <input class="submit-btn" type="submit" value="submit">
             </form>
+        </div>    
+        <div class="header-info">
+            <h2 style="text-align: center; font-family: sans-serif; margin-top: 30px;"> MENU: </h2>
         </div>
+    </div>
 
-        <div style="position: absolute; bottom: 0; top: 40%; transform: translateY(50%);">
-            <img class="header-img" src="https://w.forfun.com/fetch/f4/f4a884f56fe6e9f700a7173c504d0f9d.jpeg">
-        </div>
-
-      </div>
-
-<div>
-    <h1 style="margin-left: 5%;"> Our menu: </h1>
-</div>
-    <div style="display: flex; flex-wrap: wrap;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: start; width: 95%; margin: 0 auto;">
         {% for order in data.orders %}
-            <div style="margin-right: 0%; margin-left: 5%; width: 18%;">
+            <div style="margin-right: 1%; margin-left: 1%;">
                 {% include 'order_element.html' with element=order %}
             </div>
         {% empty %}
             Список пуст
         {% endfor %}
-    </div>   
+    </div>
 {% endblock %}

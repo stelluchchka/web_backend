@@ -1,6 +1,31 @@
+.order-title {
+    font-size: 20px;
+    font-family: sans-serif;
+    font-weight: 600;
+    margin-left: 15%;
+    margin-bottom: 3%;
+    color: #ffffff;
+}
 .order-text {
-    font-size: 10px;
-  }
+  font-size: 18px;
+  font-family: sans-serif;
+  font-weight: 200;
+  margin-left: 2%;
+  color: #ffffff;
+}
+.order-img {
+  width: 35%;
+  height: 500; 
+  margin-top: 1%; 
+  border-radius: 15px; 
+  margin-left: 2%; 
+  background-color: white;
+}
+.order-filter {
+  border: none; 
+  height: 60px; 
+  font-size: 18px;
+}
 .card {
   background-color: #ffffff;
   width: 310px; 
@@ -8,23 +33,62 @@
   margin-bottom: 10%;
   box-shadow: 0 0 10px #3c3a3a;
 }
-.header-img {
-  width: 50%;
-  height: 70%;
-  margin-top: 10px; 
-  /* margin-left: 5%; 
-  margin-right: 5%;  */
+.header-info {
+  width: 30%;
+  height: 25%;
+  margin-top: 10px;
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
   border-radius: 20% 20% / 50% 20%;
-  /* border-radius: 5%;  */
+  position: absolute; 
+  bottom: 0; 
+  top: 60%; 
+  transform: translateY(50%);
+  background-color: #00AF54;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+.header-title {
+  text-align: center; 
+  font-weight: 900; 
+  margin-top: 40px; 
+  font-family: sans-serif; 
+  color: #007CBE; 
+  text-shadow: 0 0 3px #ffffff;
 }
 .submit-btn {
   color: white; 
   background-color: #f53100; 
   border: none; 
   height: 60px; 
-  font-size: medium; 
+  font-size: 20px; 
   border-radius: 10px 10px 10px 10px; 
   width: 200px; 
   margin-left: 20px;
+  font-family: sans-serif;
 }
+.back-btn {
+  font-size: 16px;
+  font-family: sans-serif;
+  font-weight: 500;
+  background-color: #ffffff;
+  color: #007CBE;
+  border-radius: 2px;
+  border: none;
+  margin-top: 1%;
+  margin-left: 2%;
+}
+/* .my-div {
+  position: absolute; 
+  bottom: 0; 
+  top: 40%; 
+  transform: 
+  translateY(50%); 
+  background-color: #00AF54;
+} */
+
+
+/* #FBAF00 орн
+#FFD639 зол
+#FFA3AF роз
+#007CBE син
+#00AF54 зел */
