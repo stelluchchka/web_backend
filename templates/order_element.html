@@ -4,12 +4,13 @@
             <img class="card-img" src = '{{ element.url }}' width="80%" height="313" style="margin-top: 5%;">
         </p>
 
-        <div style="background-color: #FFD639; color: rgb(0, 0, 0); border-radius: 0 0 5px 5px; height: auto;">
+        <div class="order_element-div">
             <div style=" display: flex; justify-content: space-between; align-items: start; width: 100%; height: 100%; margin: 0">
-                    <p style="font-weight: bold; height: auto; text-align: center; font-size: larger; margin-left: 2%;"> <big><big>{{ element.title }}</big></big></p> 
-                    <h5 style="background-color: #f53100; color: white; font-weight: 800; right: 0; margin: 0; padding: 3px 15px 3px; border-radius: 5px;">{{element.tegs}}</h5>
+                    <p class="order_element-title"> <big><big>{{ element.title }}</big></big></p> 
+                    <h5 class="order_element-tegs">{{element.tegs}}</h5>
             </div>
-            <h4 style="margin-left: 2%; font-weight: 100;">chef: {{element.chef}}</h4>  
+            <h4 class="order_element-price">{{ element.price }}$</h4>
+            <h4 class="order_element-chef">by {{element.chef}}</h4>  
         </div>
 
 
