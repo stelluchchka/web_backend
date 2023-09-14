@@ -6,15 +6,15 @@
     <div style="position: relative; background-color: #F5AB00; color: #ffffff; height: 360px; margin-bottom: 50px;">
         <h7>**логотип</h7>
         <h1 class="header-title"><big>ЗАЯВКИ ДЛЯ ПОВАРОВ В БЫСТРОМ ПИТАНИИ</big></h1>
-        <h4 style="text-align: center; margin-bottom: 30px; font-family: sans-serif;">нереально крутой слоган</h4>
+        <h4 class="header-slogan">нереально крутой слоган</h4>
 
         <div style="height: 100px; margin-bottom: 20px; text-align: center;">
             <form action="sendText" method="post" enctype="multipart/form-data" style="margin-left: 5%; margin-bottom: 3%;">
                 {% csrf_token %}
                 <input class="order-filter" name="name" type="text" placeholder="name" style="border-radius: 10px 0 0 10px; margin-top: 20px;">
                 <input class="order-filter" name="chef" type="text" placeholder="chef">
-                <input class="order-filter" name="text2" type="text2" placeholder="text2">
-                <input class="order-filter" name="text3" type="text3" placeholder="text3" style="border-radius: 0 10px 10px 0;">
+                <input class="order-filter" name="teg" type="teg" placeholder="teg">
+                <input class="order-filter" name="price" type="price" placeholder="price" style="border-radius: 0 10px 10px 0;">
                 <input class="submit-btn" type="submit" value="submit">
             </form>
         </div>    
