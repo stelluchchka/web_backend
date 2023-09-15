@@ -6,6 +6,11 @@
     color: #ffffff;
     margin-bottom: 3%;
 }
+.order-element-img {
+  width: 80%; 
+  height: 313; 
+  margin-top: 5%;
+}
 .order-chef-div {
   position: relative;
   display: flex;
@@ -26,8 +31,8 @@
   display: inline-block;
   border-radius: 50%;
   overflow: hidden;
-  width: 70px;
-  height: 70px;
+  width: 80px;
+  height: 80px;
   margin-top: 5%;
   /* background-position: left; */
 }
@@ -48,9 +53,9 @@
   text-align: right;
 }
 .order-img {
-  width: 80%;
-  height: 500; 
-  margin-top: 1%; 
+  width: 90%;
+  height: 30; 
+  margin-top: 3%; 
   border-radius: 15px; 
   margin-left: 10%; 
   background-color: white;
@@ -62,7 +67,7 @@
 }
 .card {
   background-color: #ffffff;
-  width: 310px; 
+  width: 400px;
   border-radius: 5px;
   margin-bottom: 10%;
   box-shadow: 0 0 10px #3c3a3a;

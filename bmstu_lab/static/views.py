@@ -9,49 +9,64 @@ dishes = [
         'price': '9', 
         'tegs': 'VEG',
         'weight': '5',
-        'url': "img/0.jpeg", 
+        'url': "img/0.png", 
         'chef_post': 'main',
         'chef_url': "img/1.0.png"
     },
     {
-        'title': 'не бургер', 
+        'title': 'Сосиска в тесте', 
         'id': 1, 
         'chef': 'Christophe Bacquie', 
         'price': '15', 
         'tegs': 'VEG', 
-        'url': 'https://img.freepik.com/premium-vector/food-and-dessert-seamless-pattern_1639-40641.jpg'
+        'weight': '5',
+        'url': "img/1.png", 
+        'chef_post': 'main',
+        'chef_url': "img/1.1.png"    
     },
     {
-        'title': 'неxnj', 
+        'title': 'Кукурузные блинчики', 
         'id': 2, 
         'chef': 'Mauro Colagreco', 
         'price': '4', 
         'tegs': 'SPICY', 
-        'url': 'https://img.freepik.com/premium-vector/food-and-dessert-seamless-pattern_1639-40641.jpg'
+        'weight': '5',
+        'url': "img/2.png", 
+        'chef_post': 'main',
+        'chef_url': "img/1.2.png"     
     },
     {
-        'title': 'неxnj', 
+        'title': 'Сладкие блинчики', 
         'id': 3, 
         'chef': 'Laurent Petit', 
         'price': '9', 
         'tegs': 'NEW', 
-        'url': 'https://img.freepik.com/premium-vector/food-and-dessert-seamless-pattern_1639-40641.jpg'
+        'weight': '5',
+        'url': "img/3.png", 
+        'chef_post': 'main',
+        'chef_url': "img/1.3.png"     
     },
     {
-        'title': 'неxnj', 
+        'title': 'Омлет со свежими овощами', 
         'id': 4, 
         'chef': 'Mauro Colagreco', 
         'price': '4', 
         'tegs': 'SWEET, SPICY', 
-        'url': 'https://img.freepik.com/premium-vector/food-and-dessert-seamless-pattern_1639-40641.jpg'
+        'weight': '5',
+        'url': "img/4.png", 
+        'chef_post': 'main',
+        'chef_url': "img/1.4.png"     
     },
     {
-        'title': 'Коврик для мышки',  
+        'title': 'Каша рисовая',  
         'id': 5, 
         'chef': 'Dan Barber', 
         'price': '19', 
         'tegs': 'VEG', 
-        'url': 'https://media.istockphoto.com/id/1136168094/ru/фото/куриные-терияки-еды-подготовительный-обед-коробки-контейнеры-с-брокколи-рисом-и-морковью.jpg?s=612x612&w=0&k=20&c=7oRrk2U0oKLKuviPV2LBYpNWbS0_n0bOwQbMfALgz_I='
+        'weight': '5',
+        'url': "img/5.png", 
+        'chef_post': 'main',
+        'chef_url': "img/1.5.png"     
     },
 ]
 def GetOrders(request):

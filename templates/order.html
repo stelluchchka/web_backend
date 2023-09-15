@@ -4,7 +4,7 @@
 {% block title %}Заказ №{{ data.id }}{% endblock %}
 
 {% block content %}
-<div style="background-color: #FBAF00; height: 100%; width: 80%; margin-left: 10%; display: flex; flex-wrap: wrap; justify-content: space-around; height: 100vh;">
+<div style="overflow: auto; background-color: #FBAF00; height: 100%; width: 80%; margin-left: 10%; display: flex; flex-wrap: wrap; justify-content: space-around; height: 80vh;">
     <div style="width: 40%;">
         <button id ="back-btn" class="back-btn">< back</button>
         <p style="text-align: left; border-radius: 10px;">
@@ -13,8 +13,8 @@
             <div class="order-chef-div">
                 <img class="order-chef-img" src="{% static data.dish.chef_url %}">
                 <div>
-                     <p class="order-chef-p">by {{data.dish.chef}}</p>
-                     <p class="order-text">{{chef_post}}</p>
+                     <p class="order-chef-p">by {{data.dish.chef}}</p> <br><br>
+                     <p class="order-chef-p">{{data.dish.chef_post}}</p>
                 </div>
                
             </div>        
