@@ -1,19 +1,50 @@
-{% extends 'base.html' %}
 
+{% extends 'base.html' %}
+{% load static %}
 {% block title %}Заказ №{{ data.id }}{% endblock %}
 
 {% block content %}
-<div style="background-color: #007CBE; height: 100%; width: 80%; margin-left: 10%; display: flex; flex-wrap: wrap; justify-content: center;">
-    <div style="margin-left: 0%; width: 50%;">
+<div style="background-color: #FBAF00; height: 100%; width: 80%; margin-left: 10%; display: flex; flex-wrap: wrap; justify-content: space-around; height: 100vh;">
+    <div style="width: 40%;">
         <button id ="back-btn" class="back-btn">< back</button>
         <p style="text-align: left; border-radius: 10px;">
-            <img class="order-img" src = '{{ data.order.url }}'>
-            <div class="order-title">{{ data.order.title}}</div>
-            <div class="order-chef">by {{data.order.chef}}</div>        
+            <div class="order-title">{{ data.dish.title}}</div>
+            <img class="order-img" src = "{% static data.dish.url %}">
+            <div class="order-chef-div">
+                <img class="order-chef-img" src="{% static data.dish.chef_url %}">
+                <div>
+                     <p class="order-chef-p">by {{data.dish.chef}}</p>
+                     <p class="order-text">{{chef_post}}</p>
+                </div>
+               
+            </div>        
         </p>
     </div>
-    <div style="width: 50%; margin-top: 3%;">
-        <p class="order-text"> ddd</p>
+    <div style="width: 23%; margin-top: 3%;">
+        <div style="display: flex; justify-content: space-between; position: relative;">
+            <span class="order-text"> ВЕС, Г</span> 
+            <span class="order-digit">{{data.dish.weight}}</span>
+        </div>
+        <div class="line"></div> 
+        <div style="display: flex; justify-content: space-between;">
+            <span class="order-text"> ЦЕНА, $ </span> 
+            <span class="order-digit">{{data.dish.price}}</span>
+        </div>
+        <div class="line"></div> 
+        <div style="display: flex; justify-content: space-between;">
+            <span class="order-text">ЭНЕРГЕТИЧЕСКАЯ ЦЕННОСТЬ, ККАЛ/100 Г </span> 
+            <span class="order-digit">{{data.dish.price}}</span>
+        </div>
+        <div class="line"></div> 
+        <span class="order-text">СРОК ГОДНОСТИ</span>
+        <div class="gray-line"></div>
+        <span class="order-text">сутки</span>        
+
+    </div>
+    <div style="width: 23%; margin-top: 3%;">
+        <span class="order-text"> СОСТАВ</span>
+        <div class="line"></div>
+        <span class="order-text">vyjuj ,red<br> ss<br> ss<br> ss<br> ss<br> ss<br> ss</span>  
     </div>
 
 </div>

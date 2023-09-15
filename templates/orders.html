@@ -24,9 +24,9 @@
     </div>
 
     <div style="display: flex; flex-wrap: wrap; justify-content: start; width: 95%; margin: 0 auto;">
-        {% for order in data.orders %}
+        {% for dish in data.dishes %}
             <div style="margin-right: 1%; margin-left: 1%;">
-                {% include 'order_element.html' with element=order %}
+                {% include 'order_element.html' with element=dish %}
             </div>
         {% empty %}
             Список пуст

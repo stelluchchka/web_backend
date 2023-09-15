@@ -4,25 +4,48 @@
     font-weight: 600;
     text-align: center;
     color: #ffffff;
+    margin-bottom: 3%;
 }
-.order-chef {
+.order-chef-div {
+  position: relative;
+  display: flex;
+  width: 80%;
+  margin: 0 auto;
+}
+.order-chef-p {
+  position: absolute;
+  width: 90%;
   font-size: 18px;
   font-family: sans-serif;
   font-weight: 200;
-  color: #ffffff;
+  color: #3c3a3a;
   text-align: right;
-  margin-top: 1%;
-  margin-right: 10%;
   font-style: italic;
 }
+.order-chef-img {
+  display: inline-block;
+  border-radius: 50%;
+  overflow: hidden;
+  width: 70px;
+  height: 70px;
+  margin-top: 5%;
+  /* background-position: left; */
+}
 .order-text {
-  font-size: 18px;
+  font-size: 15px;
   font-family: sans-serif;
-  font-weight: 200;
-  color: #ffffff;
+  font-weight: 500;
+  color: #3c3a3a;
   text-align: left;
   margin-top: 3%;
-  margin-right: 10%;
+  word-wrap: break-word;
+}
+.order-digit {
+  font-size: 32px;
+  font-family: Merriweather;
+  font-weight: 800;
+  color: #007CBE;
+  text-align: right;
 }
 .order-img {
   width: 80%;
@@ -134,6 +157,17 @@
   margin-top: 1%;
   margin-left: 2%;
 }
+
+.line {
+  margin-bottom: 10%;
+  margin-top: 10%;
+  border-bottom: 1px solid #007CBE;
+ }
+ .gray-line {
+  margin-bottom: 5%;
+  margin-top: 5%;
+  border-bottom: 1px solid #635f5f;
+ }
 /* .my-div {
   position: absolute; 
   bottom: 0; 
@@ -144,8 +178,11 @@
 } */
 
 
-/* #FBAF00 орн
+/* 
+#3c3a3a сер
+#FBAF00 орн
 #FFD639 зол
 #FFA3AF роз
 #007CBE син
-#00AF54 зел */
+#00AF54 зел 
+*/
