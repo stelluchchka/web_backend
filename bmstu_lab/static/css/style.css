@@ -3,7 +3,7 @@
     font-family: sans-serif;
     font-weight: 600;
     text-align: center;
-    color: #ffffff;
+    color: #FBAF00;
     margin-bottom: 3%;
 }
 .order-element-img {
@@ -49,7 +49,7 @@
   font-size: 32px;
   font-family: Merriweather;
   font-weight: 800;
-  color: #007CBE;
+  color: #FBAF00;
   text-align: right;
 }
 .order-img {
@@ -64,6 +64,7 @@
   border: none; 
   height: 60px; 
   font-size: 18px;
+  width: 70%;
 }
 .card {
   background-color: #ffffff;
@@ -91,8 +92,10 @@
   font-weight: 900; 
   margin-top: 40px; 
   font-family: sans-serif; 
-  color: #007CBE; 
+  color: white; 
   text-shadow: 0 0 3px #ffffff;
+  /* text-shadow: red 1px 1px 0, red -1px -1px 0, 
+                 red -1px 1px 0, red 1px -1px 0; */
 }
 .header-slogan {
   text-align: center; 
@@ -156,7 +159,7 @@
   font-family: sans-serif;
   font-weight: 500;
   background-color: #ffffff;
-  color: #007CBE;
+  color: #FBAF00;
   border-radius: 4px;
   border: none;
   margin-top: 1%;
@@ -166,7 +169,7 @@
 .line {
   margin-bottom: 10%;
   margin-top: 10%;
-  border-bottom: 1px solid #007CBE;
+  border-bottom: 1px solid #FBAF00;
  }
  .gray-line {
   margin-bottom: 5%;

@@ -11,10 +11,11 @@
         <div style="height: 100px; margin-bottom: 20px; text-align: center;">
             <form action="sendText" method="post" enctype="multipart/form-data" style="margin-left: 5%; margin-bottom: 3%;">
                 {% csrf_token %}
-                <input class="order-filter" name="name" type="text" placeholder="name" style="border-radius: 10px 0 0 10px; margin-top: 20px;">
+                <!-- <input class="order-filter" name="name" type="text" placeholder="name" style="border-radius: 10px 0 0 10px; margin-top: 20px;">
                 <input class="order-filter" name="chef" type="text" placeholder="chef">
-                <input class="order-filter" name="teg" type="teg" placeholder="teg">
-                <input class="order-filter" name="price" type="price" placeholder="price" style="border-radius: 0 10px 10px 0;">
+                <input class="order-filter" name="teg" type="text" placeholder="teg">
+                <input class="order-filter" name="price" type="text" placeholder="price" style="border-radius: 0 10px 10px 0;"> -->
+                <input class="order-filter" name="name" type="text" placeholder="name" style="border-radius: 10px 10px 10px 10px; margin-top: 20px;">
                 <input class="submit-btn" type="submit" value="submit">
             </form>
         </div>    

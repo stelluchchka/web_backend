@@ -115,7 +115,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'bmstu_lab/static/'
+STATIC_URL = '/bmstu_lab/static/'
 STATICFILES_DIRS=[BASE_DIR/ 'bmstu_lab/static']
 
 # Default primary key field type

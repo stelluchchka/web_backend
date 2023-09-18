@@ -1,19 +1,27 @@
-
-{% extends 'base.html' %}
 {% load static %}
-{% block title %}Заказ №{{ data.id }}{% endblock %}
+<!doctype html>
+<html lang="en" class="h-100">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+  <title>Заказ №{{ data.id }}</title>
+</head>
 
-{% block content %}
-<div style="overflow: auto; background-color: #FBAF00; height: 100%; width: 80%; margin-left: 10%; display: flex; flex-wrap: wrap; justify-content: space-around; height: 80vh;">
+<body style="background-color: #FBAF00; height: 100vh; position: relative;">
+<div style="position: relative; background-color: #FBAF00; color: #ffffff; height: 130px; margin-bottom: 1%;">
+    <h7>**логотип</h7>
+    <h1 class="header-title">ЗАЯВКИ ДЛЯ ПОВАРОВ В БЫСТРОМ ПИТАНИИ</h1>
+</div>
+<div style="background-color: white; height: 100%; width: 70%; margin-left: 15%; display: flex; flex-wrap: wrap; justify-content: space-around; position: absolute;">
     <div style="width: 40%;">
-        <button id ="back-btn" class="back-btn">< back</button>
+        <!-- <button id ="back-btn" class="back-btn">< back</button> -->
         <p style="text-align: left; border-radius: 10px;">
             <div class="order-title">{{ data.dish.title}}</div>
             <img class="order-img" src = "{% static data.dish.url %}">
             <div class="order-chef-div">
                 <img class="order-chef-img" src="{% static data.dish.chef_url %}">
                 <div>
-                     <p class="order-chef-p">by {{data.dish.chef}}</p> <br><br>
+                     <p class="order-chef-p">{{data.dish.chef}},</p> <br><br>
                      <p class="order-chef-p">{{data.dish.chef_post}}</p>
                 </div>
                
@@ -33,19 +41,19 @@
         <div class="line"></div> 
         <div style="display: flex; justify-content: space-between;">
             <span class="order-text">ЭНЕРГЕТИЧЕСКАЯ ЦЕННОСТЬ, ККАЛ/100 Г </span> 
-            <span class="order-digit">{{data.dish.price}}</span>
+            <span class="order-digit">{{data.dish.energy_value}}</span>
         </div>
         <div class="line"></div> 
         <span class="order-text">СРОК ГОДНОСТИ</span>
         <div class="gray-line"></div>
-        <span class="order-text">сутки</span>        
+        <span class="order-text">{{data.dish.expiry_date}}</span>        
 
     </div>
     <div style="width: 23%; margin-top: 3%;">
         <span class="order-text"> СОСТАВ</span>
         <div class="line"></div>
-        <span class="order-text">vyjuj ,red<br> ss<br> ss<br> ss<br> ss<br> ss<br> ss</span>  
+        <span class="order-text">{{data.dish.content}}</span>  
     </div>
-
 </div>
-{% endblock %}
+</body>
+</html>
