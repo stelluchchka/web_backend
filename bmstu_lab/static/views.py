@@ -1,7 +1,8 @@
 #from django.http import HttpResponse
 from django.shortcuts import render
 
-dishes = [
+def GetData(id):
+    dishes = [
     {
         'title': 'Гаспачо', 
         'id': 0, 
@@ -85,18 +86,32 @@ dishes = [
         'content': 'вода питьевая, томаты, перец сладкий (болгарский), паста томатная, томаты в собственном соку консервированные, крабовые палочки - имитированная пищевая рыбная продукция, вода питьевая, крахмал картофельный, масло растительное, соль, ароматизаторы, красители), масло подсолнечное, сельдерей, базилик, сахар, уксус винный, соль, соус наполи, перец красный чили, чеснок, приправа из цитрусовых плодов лимонная',
         'url': "img/5.png", 
         'chef_url': "img/1.5.png"    
-    },
-]
-def GetOrders(request):
-    return render(request, 'orders.html', {'data' : {
-        'dishes': dishes
+    }, 
+    ]
+    if id == -1:
+        return dishes
+    return dishes[id]
+
+
+def GetDishes(request):
+    keyword = request.GET.get('name')
+    a = GetData(-1)
+    if not keyword:
+        return render(request, 'dishes.html', {'data': {
+        'dishes': a}})
+    dishes = []
+    for i in a:
+        if keyword and keyword.lower() in i.get('title', '').lower():
+            dishes.append(i)
+    return render(request, 'dishes.html', {'data': {
+        'dishes': dishes}})
+
+
+def GetDish(request, id):
+    return render(request, 'dish.html', {'data' : {
+        'dish': GetData(id)
     }})
 
-def GetOrder(request, id):
-    return render(request, 'order.html', {'data' : {
-        'id': id,
-        'dish': dishes[id]
-    }})
 
-def sendText(request):
-    input_text = request.POST['text']
+# def sendText(request):
+#     input_text = request.POST['text']

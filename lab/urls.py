@@ -23,6 +23,6 @@ from bmstu_lab.static import views
 urlpatterns = [
     # path('sendText', views.sendText, name='sendText'),
     path('admin/', admin.site.urls),
-    path('', views.GetOrders),
-    path('order/<int:id>/', views.GetOrder, name='order_url'),
+    path('', views.GetDishes, name='dishes'),
+    path('dish/<int:id>/', views.GetDish, name='dish_url'),
 ]

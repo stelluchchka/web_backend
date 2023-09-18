@@ -3,19 +3,19 @@
 {% block title %}Список заказов{% endblock %}
 
 {% block content %}
-    <div style="position: relative; background-color: #F5AB00; color: #ffffff; height: 360px; margin-bottom: 50px;">
+    <div style="position: relative; background-color: #F5AB00; color: #ffffff; height: 340px; margin-bottom: 50px;">
         <h7>**логотип</h7>
         <h1 class="header-title"><big>ЗАЯВКИ ДЛЯ ПОВАРОВ В БЫСТРОМ ПИТАНИИ</big></h1>
         <h4 class="header-slogan">нереально крутой слоган</h4>
 
         <div style="height: 100px; margin-bottom: 20px; text-align: center;">
-            <form action="sendText" method="post" enctype="multipart/form-data" style="margin-left: 5%; margin-bottom: 3%;">
+            <form action="{% url 'dishes'%}" method="get" enctype="multipart/form-data" style="margin-left: 5%; margin-bottom: 3%;">
                 {% csrf_token %}
-                <!-- <input class="order-filter" name="name" type="text" placeholder="name" style="border-radius: 10px 0 0 10px; margin-top: 20px;">
-                <input class="order-filter" name="chef" type="text" placeholder="chef">
-                <input class="order-filter" name="teg" type="text" placeholder="teg">
-                <input class="order-filter" name="price" type="text" placeholder="price" style="border-radius: 0 10px 10px 0;"> -->
-                <input class="order-filter" name="name" type="text" placeholder="name" style="border-radius: 10px 10px 10px 10px; margin-top: 20px;">
+                <!-- <input class="dish-filter" name="name" type="text" placeholder="name" style="border-radius: 10px 0 0 10px; margin-top: 20px;">
+                <input class="dish-filter" name="chef" type="text" placeholder="chef">
+                <input class="dish-filter" name="teg" type="text" placeholder="teg">
+                <input class="dish-filter" name="price" type="text" placeholder="price" style="border-radius: 0 10px 10px 0;"> -->
+                <input class="dish-filter" name="name" type="text" placeholder="name" style="border-radius: 10px 10px 10px 10px; margin-top: 20px;">
                 <input class="submit-btn" type="submit" value="submit">
             </form>
         </div>    
@@ -27,10 +27,10 @@
     <div style="display: flex; flex-wrap: wrap; justify-content: start; width: 90%; margin: 0 auto;">
         {% for dish in data.dishes %}
             <div style="margin-right: 1%; margin-left: 1%;">
-                {% include 'order_element.html' with element=dish %}
+                {% include 'dish_element.html' with element=dish %}
             </div>
         {% empty %}
-            Список пуст
+            <p class="dish-text"> <big>таких блюд у нас нет🥹</big></p>
         {% endfor %}
     </div>
 {% endblock %}
