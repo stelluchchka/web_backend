@@ -104,7 +104,8 @@ def GetDishes(request):
         if keyword and keyword.lower() in i.get('title', '').lower():
             dishes.append(i)
     return render(request, 'dishes.html', {'data': {
-        'dishes': dishes}})
+        'dishes': dishes},
+        "search_query": keyword if keyword else ""})
 
 
 def GetDish(request, id):
