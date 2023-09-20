@@ -1,20 +1,21 @@
 #from django.http import HttpResponse
 from django.shortcuts import render
-from models import *
+from bmstu_lab.models import *
 
 def GetDishes(request):
-    keyword = request.GET.get('keyword')
-    a = Dishes.objects.filter(status='enabled')
+    keyword = request.GET.get('name')
+    dishes = Dishes.objects.filter(status='enabled')
     if keyword:
-         keyword = keyword[0].upper()+keyword[1:]
-         a = Dishes.objects.filter(status='enabled').filter(title=keyword)
+        keyword = keyword[0].upper()+keyword[1:]
+        dishes = Dishes.objects.filter(status='enabled').filter(title=keyword)
     return render(request, 'dishes.html', {'data': {
-        'dishes': a},
+        'dishes': dishes},
         "search_query": keyword if keyword else ""})
+
 
 def GetDish(request, id):
     return render(request, 'dish.html', {'data' : {
-        'dish': Dishes.objects.get(id = id)
+        'dish': Dishes.objects.filter(id = id)[0]
     }})
 
 

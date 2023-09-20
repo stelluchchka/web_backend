@@ -82,7 +82,7 @@ WSGI_APPLICATION = 'lab.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
+        'NAME': 'small_business',
         'USER': 'postgres',
         'PASSWORD': '1234',
         'HOST': 'localhost',
@@ -124,7 +124,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = '/bmstu_lab/static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS=[BASE_DIR/ 'bmstu_lab/static']
 
 # Default primary key field type

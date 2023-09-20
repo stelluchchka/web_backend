@@ -18,7 +18,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from bmstu_lab.static import views
+from bmstu_lab import views
 
 urlpatterns = [
     # path('sendText', views.sendText, name='sendText'),
