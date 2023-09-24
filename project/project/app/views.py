@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from rest_framework import viewsets
 from app.serializers import StockSerializer
 from app.models import Stock

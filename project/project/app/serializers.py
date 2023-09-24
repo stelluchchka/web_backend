@@ -1,5 +1,5 @@
-from rest_framework import serializers
 from app.models import Stock
+from rest_framework import serializers
 
 
 class StockSerializer(serializers.ModelSerializer):
