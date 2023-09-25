@@ -34,6 +34,7 @@ class DishesOrders(models.Model):
         db_table = 'dishes_orders'
 
 
+
 class DjangoMigrations(models.Model):
     id = models.BigAutoField(primary_key=True)
     app = models.CharField(max_length=255)
@@ -43,6 +44,7 @@ class DjangoMigrations(models.Model):
     class Meta:
         managed = False
         db_table = 'django_migrations'
+
 
 
 class Orders(models.Model):
@@ -57,9 +59,8 @@ class Orders(models.Model):
     created_at = models.DateTimeField(blank=True, null=True)
     processed_at = models.DateTimeField(blank=True, null=True)
     completed_at = models.DateTimeField(blank=True, null=True)
-    moderator = models.CharField(max_length=255, blank=True, null=True)
-    is_active = models.BooleanField(blank=True, null=True)
     user = models.ForeignKey('Users', models.DO_NOTHING, blank=True, null=True)
+    moderator = models.ForeignKey('Users', models.DO_NOTHING, related_name='orders_moderator_set', blank=True, null=True)
 
     class Meta:
         managed = False
@@ -71,6 +72,7 @@ class Users(models.Model):
     email = models.CharField(max_length=255, blank=True, null=True)
     password = models.CharField(max_length=255, blank=True, null=True)
     role = models.CharField(max_length=255, blank=True, null=True)
+    login = models.CharField(max_length=255)
 
     class Meta:
         managed = False
