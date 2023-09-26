@@ -25,4 +25,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.GetDishes, name='dishes'),
     path('dish/<int:id>/', views.GetDish, name='dish_url'),
+    path('delete_dish/<int:id>/', views.delete_dish, name='delete_dish'),
 ]

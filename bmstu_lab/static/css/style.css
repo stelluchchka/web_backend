@@ -116,6 +116,16 @@
   margin-left: 20px;
   font-family: sans-serif;
 }
+.del-btn {
+  background-color: #00AF54; 
+  width: 45px; 
+  font-family: sans-serif; 
+  color: white; 
+  font-weight: 600; 
+  padding: 3px 3px 3px; 
+  border-radius: 5px; 
+  border: none;
+}
 .dish_element-div {
   background-color: #FFD639; 
   color: #3c3a3a; 

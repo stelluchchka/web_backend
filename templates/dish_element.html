@@ -11,7 +11,11 @@
                     <h5 class="dish_element-tegs">{{element.tags}}</h5>
             </div>
             <h4 class="dish_element-price">{{element.price}}$</h4>
-            <h4 class="dish_element-chef">{{element.chef_post}}</h4>  
+            <h4 class="dish_element-chef">{{element.chef_post}}</h4>
+            <form method="post" action="{% url 'delete_dish' element.id %}">
+                {% csrf_token %}
+                <input value="delete" type="submit" class="del-btn">
+            </form>
         </div>
 
 

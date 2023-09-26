@@ -1,6 +1,8 @@
 #from django.http import HttpResponse
 from django.shortcuts import render
 from bmstu_lab.models import *
+from django.shortcuts import redirect
+from django.db import connection
 
 def GetDishes(request):
     keyword = request.GET.get('name')
@@ -18,6 +20,12 @@ def GetDish(request, id):
         'dish': Dishes.objects.filter(id = id)[0]
     }})
 
+def delete_dish(request, id):
+    service = Dishes.objects.get(id=id)
+    service.status = 'disabled'
+    service.save()
+
+    return redirect('dishes')  # Перенаправьте на страницу 'dishes' после удаления услуги
 
 # def sendText(request):
 #     input_text = request.POST['text']
