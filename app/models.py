@@ -17,7 +17,7 @@ class Dishes(models.Model):
     status = models.CharField(max_length=50, blank=True, null=True)
     expiry_date = models.CharField(max_length=50, blank=True, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
-
+    urrl = models.BinaryField(blank=True, null=True)
     class Meta:
         managed = False
         db_table = 'dishes'

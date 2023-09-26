@@ -6,7 +6,7 @@ class DishSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dishes
         fields = ["title", "price", "tags", "weight", "energy_value", "content", "chef_name", 
-                  "chef_post", "chef_url", "status", "expiry_date", "url"]
+                  "chef_post", "chef_url", "status", "expiry_date", "url", "urrl"]
 
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
