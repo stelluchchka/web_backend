@@ -2,7 +2,7 @@
 from django.shortcuts import render
 from bmstu_lab.models import *
 from django.shortcuts import redirect
-from django.db import connection
+import psycopg2
 
 def GetDishes(request):
     keyword = request.GET.get('name')
@@ -21,11 +21,19 @@ def GetDish(request, id):
     }})
 
 def delete_dish(request, id):
-    service = Dishes.objects.get(id=id)
-    service.status = 'disabled'
-    service.save()
+    # dish = Dishes.objects.get(id=id)
+    # dish.status = 'disabled'
+    # dish.save()
+    conn = psycopg2.connect(database="small_business", user="postgres", password="1234", host="localhost", port="5432")
+    cur = conn.cursor()
 
-    return redirect('dishes')  # Перенаправьте на страницу 'dishes' после удаления услуги
+    cur.execute("update dishes set status='deleted' WHERE id = %s;", (id,))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return redirect('dishes')
 
 # def sendText(request):
 #     input_text = request.POST['text']
