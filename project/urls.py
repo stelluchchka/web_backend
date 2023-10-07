@@ -27,10 +27,11 @@ urlpatterns = [
     path('dishes/<int:pk>/', views.GetDish, name = 'dish'),
     path('dishes/<int:pk>/delete', views.DeleteDish, name = 'dish_delete'),
     path('dishes/<int:pk>/put', views.PutDish, name = 'dish_put'),
+    path('dishes/<int:pk>/add', views.AddDishToOrder, name = 'dish_add'),
 
     #Order
     path('orders/', views.GetOrders, name = 'orders'),
-    path('orders/post', views.PostOrders, name = 'orders_post'),
+    # path('orders/post', views.PostOrders, name = 'orders_post'),
     path('orders/<int:pk>/', views.GetOrder, name = 'order'),
     path('orders/<int:pk>/delete', views.DeleteOrder, name = 'order_delete'),
     path('orders/<int:pk>/put', views.PutOrder, name = 'order_put'),

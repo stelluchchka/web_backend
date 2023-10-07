@@ -14,7 +14,7 @@ class Dishes(models.Model):
     chef_name = models.CharField(max_length=255, blank=True, null=True)
     chef_post = models.CharField(max_length=255)
     chef_url = models.CharField(max_length=255, blank=True, null=True)
-    status = models.CharField(max_length=50, blank=True, null=True)
+    status = models.CharField(max_length=50, blank=True, null=True, choices=STATUS_CHOICES)
     expiry_date = models.CharField(max_length=50, blank=True, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
     urrl = models.BinaryField(blank=True, null=True)
@@ -70,7 +70,7 @@ class Orders(models.Model):
         ('denied', 'отказ'),
         ('deleted', 'удален')
     ]
-    status = models.CharField(max_length=50, blank=True, null=True)
+    status = models.CharField(max_length=50, blank=True, null=True, choices=STATUS_CHOICES)
     created_at = models.DateTimeField(blank=True, null=True)
     processed_at = models.DateTimeField(blank=True, null=True)
     completed_at = models.DateTimeField(blank=True, null=True)
