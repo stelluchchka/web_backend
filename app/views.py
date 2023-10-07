@@ -53,10 +53,10 @@ def PostDishes(request):
     #             secure=False)
     # client.fput_object(bucket_name='img', 
     #                 object_name=f"{i}.png",
-    #                 file_path=request.url)
+    #                 file_path=request.data["url"])
     # client.fput_object(bucket_name='img', 
     #                 object_name=f"chef{i}.png",
-    #                 file_path=request.chef_url)
+    #                 file_path=request.data["chef_url"])
     # serializer.url=...
     # serializer.chef_url=...
     serializer.save()
