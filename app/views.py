@@ -1,27 +1,14 @@
-# import psycopg2
-# from psycopg2 import sql
 from django.shortcuts import *
 from rest_framework.decorators import api_view
 from rest_framework.response import *
 from rest_framework.status import *
-from rest_framework import viewsets
+# from rest_framework import viewsets
 from app.serializers import *
 from app.models import *
 from minio import Minio
 from datetime import datetime
 
 user = Users(id=1, name="User", email="a", password=1234, role="user", login="aa")
-
-# user=Users.objects.create(user)
-
-# client = Minio(endpoint="localhost:9000",
-#             access_key='minioadmin',
-#             secret_key='minioadmin',
-#             secure=False)
-# for i in range(5):
-#     client.fget_object(bucket_name='bucket', 
-#                     object_name=f"img/{i}.png",
-#                     file_path=f"/Users/stella/projects/web_backend/app/img/{i}.png")
 
 # class OrderViewSet(viewsets.ModelViewSet):
 #     queryset = Orders.objects.all()
@@ -148,7 +135,7 @@ def GetOrders(request):
     
     return Response(serializer.data)
 
-@api_view(['GET'])                                  # все заказы
+@api_view(['GET'])                                  # 1 заказ
 def GetOrder(request, pk):
     if not Orders.objects.filter(id=pk).exists():
         return Response(f"Заказа с таким id нет")
@@ -157,12 +144,12 @@ def GetOrder(request, pk):
     serializer = OrderSerializer(order)
     return Response(serializer.data)
 
-@api_view(['DELETE'])                               # удалить заказ
+@api_view(['DELETE'])                               # удалить заказ?
 def DeleteOrder(request, pk):
     if not Orders.objects.filter(id=pk).exists():
         return Response(f"Заказа с таким id нет")
     order = Orders.objects.get(id=pk)
-    order.status = "удален"
+    order.status = "отказ"
     order.save()
 
     order = Orders.objects.all()
@@ -191,14 +178,15 @@ def ConfirmOrder(request, pk):
 
     order = Orders.objects.get(id=pk)
 
-    if not (order.status != "сформирован" or (request.data["status"] != "отказ" and request.data["status"] != "готов")):
-        return Response(f"Заказ не сформирован")
-
+    if order.status != "сформирован":
+        return Response("Такой заказ не сформирован")
+    if request.data["status"] not in ["отказ", "готов"]:
+        return Response("Ошибка")
     order.status = request.data["status"]
+    order.completed_at=datetime.now()
     order.save()
 
-    order = Orders.objects.all()
-    serializer = OrderSerializer(order, many=True)
+    serializer = OrderSerializer(order)
     return Response(serializer.data)
 
 
@@ -208,10 +196,14 @@ def ToOrder(request, pk):
         return Response(f"Заказа с таким id нет")
 
     order = Orders.objects.get(id=pk)
-    if not (order.status != "принят" or (request.data["status"] != "отменен" and request.data["status"] != "сформирован")):
-        return Response(f"Такого заказа нет")
+
+    if order.status != "зарегистрирован":
+        return Response("Такого заказа не зарегистрировано")
+    if request.data["status"] not in ["отменен", "сформирован"]:
+        return Response("Ошибка")
 
     order.status = request.data["status"]
+    order.processed_at=datetime.now()
     order.save()
 
     serializer = OrderSerializer(order)
@@ -229,7 +221,7 @@ def PutDishesOrders(request, pk):
     dishes_orders.save()
 
     dishes_orders = DishesOrders.objects.all()
-    serializer = DishOrderSerializer(dishes_orders)
+    serializer = DishOrderSerializer(dishes_orders, many=True)
     return Response(serializer.data)
 
 @api_view(['DELETE'])                                # удаление м-м
