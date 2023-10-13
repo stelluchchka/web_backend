@@ -27,24 +27,35 @@ def PostDishes(request):
     serializer = DishSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors)
-    serializer.save()
-    print(serializer.data)
-    new_dish = Dishes.objects.create(serializer.data)
+    new_dish = serializer.save()
     #картинки выгрузить в minio и в поле в бд внести адрес к этому объекту в хранилище
     client = Minio(endpoint="localhost:9000",
-                access_key='minioadmin',
-                secret_key='minioadmin',
-                secure=False)
+                   access_key='minioadmin',
+                   secret_key='minioadmin',
+                   secure=False)
     i=new_dish.id-1
-    client.fput_object(bucket_name='img', 
-                    object_name=f"{i}.png",
-                    file_path=request.data["url"])
-    client.fput_object(bucket_name='img', 
-                    object_name=f"chef{i}.png",
-                    file_path=request.data["chef_url"])
-    new_dish.url=f"/Users/stella/projects/web_backend/sources/img/{i}.png"
-    new_dish.chef_url=f"/Users/stella/projects/web_backend/sources/img/chef{i}.png"
-
+    img_obj_name = f"{i}.png"
+    chef_img_obj_name = f"chef{i}.png"
+    # Загружаем изображение в Minio
+    try:
+        client.fput_object(bucket_name='img',
+                           object_name=img_obj_name,
+                           file_path=request.data["url"])
+        new_dish.url = f"minio://localhost:9000/img/{img_obj_name}"
+    except Exception as e:
+        return Response({"error": str(e)})
+    
+    # Загружаем изображение повара в Minio
+    try:
+        client.fput_object(bucket_name='img',
+                           object_name=chef_img_obj_name,
+                           file_path=request.data["chef_url"])
+        new_dish.chef_url = f"minio://localhost:9000/img/{chef_img_obj_name}"
+    except Exception as e:
+        return Response({"error": str(e)})
+    
+    # Сохраняем обновленные данные блюда после изменения url
+    new_dish.save()
 
     dish = Dishes.objects.filter(status="есть")
     serializer = DishSerializer(dish, many=True)
@@ -203,7 +214,7 @@ def ToOrder(request, pk):
         return Response("Ошибка")
 
     order.status = request.data["status"]
-    order.processed_at=datetime.now()
+    order.processed_at=datetime.now()   #.strftime("%d.%m.%Y %H:%M:%S")
     order.save()
 
     serializer = OrderSerializer(order)

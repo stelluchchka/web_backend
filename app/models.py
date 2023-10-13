@@ -64,11 +64,11 @@ class Users(models.Model):
 
 class Orders(models.Model):
     STATUS_CHOICES = [
-        ('registered', 'зарегистрирован'),
-        ('canceled', 'отменен'),
-        ('confirmed', 'сформирован'),
-        ('denied', 'отказ'),
-        ('complited', 'готов')
+        ('зарегистрирован', 'registered'),
+        ('отменен', 'canceled'),
+        ('сформирован', 'confirmed'),
+        ('отказ', 'denied'),
+        ('готов', 'complited')
     ]
     status = models.CharField(max_length=50, blank=True, null=True, choices=STATUS_CHOICES)
     created_at = models.DateTimeField(blank=True, null=True)
