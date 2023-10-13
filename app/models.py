@@ -2,8 +2,8 @@ from django.db import models
 
 class Dishes(models.Model):
     STATUS_CHOICES = [
-        ('enabled', 'есть'),
-        ('deleted', 'нет'),
+        ('есть', 'enabled'),
+        ('удалено', 'deleted'),
     ]
     title = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -64,11 +64,11 @@ class Users(models.Model):
 
 class Orders(models.Model):
     STATUS_CHOICES = [
-        ('registered', 'принят'),
-        ('cooking', 'готовится'),
-        ('done', 'приготовлен'),
+        ('registered', 'зарегистрирован'),
+        ('canceled', 'отменен'),
+        ('confirmed', 'сформирован'),
         ('denied', 'отказ'),
-        ('deleted', 'удален')
+        ('complited', 'готов')
     ]
     status = models.CharField(max_length=50, blank=True, null=True, choices=STATUS_CHOICES)
     created_at = models.DateTimeField(blank=True, null=True)
@@ -81,4 +81,3 @@ class Orders(models.Model):
     class Meta:
         managed = False
         db_table = 'orders'
-
