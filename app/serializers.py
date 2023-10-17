@@ -29,12 +29,12 @@ class DishOrderSerializer(serializers.ModelSerializer):
 
 
 class DishesOrdersSerializer(serializers.ModelSerializer):
-    dish_id = serializers.IntegerField(source='dish.id')
+    dish_url = serializers.CharField(source='dish.url')
     dish_name = serializers.CharField(source='dish.title')
 
     class Meta:
         model = DishesOrders
-        fields = ['dish_id', 'dish_name', 'quantity']
+        fields = ['dish_name', 'dish_url', 'quantity']
 
 class FullOrderSerializer(serializers.ModelSerializer):
     dishes = DishesOrdersSerializer(many=True, read_only=True)

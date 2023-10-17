@@ -128,7 +128,7 @@ def PostDishToOrder(request, pk):
 
     # dishes_orders = DishesOrders.objects.all()  # выводим все м-м
     # serializer = DishOrderSerializer(dishes_orders, many=True)
-    orders = Orders.objects.get(id=order_id)  # выводим все заказы
+    orders = Orders.objects.get(id=order_id)  # выводим 1 заказ
     serializer = OrderSerializer(orders)
     return Response(serializer.data)
 
@@ -226,10 +226,13 @@ def ToOrder(request, pk):
 
 #Dishes-Orders
 @api_view(['PUT'])                                  # изменение м-м(кол-во)
-def PutDishesOrders(request, pk):
-    if not DishesOrders.objects.filter(id=pk).exists():
-        return Response(f"Связи м-м с таким id нет?")
-
+def PutDishesOrders(request, pk):                   # передаем id заказа
+    try: 
+        order=Orders.objects.get(user=user, status="зарегистрирован", id=pk) # заказ определенного пользователя
+    except:
+        return Response("нет такого заказа")
+    if not DishesOrders.objects.filter(order=order.id).exists():
+        return Response(f"в заказе нет блюд")
     dishes_orders = DishesOrders.objects.get(id=pk)
     dishes_orders.quantity = request.data["quantity"]
     dishes_orders.save()
@@ -239,9 +242,13 @@ def PutDishesOrders(request, pk):
     return Response(serializer.data)
 
 @api_view(['DELETE'])                                # удаление м-м
-def DeleteDishesOrders(request, pk):
-    if not DishesOrders.objects.filter(id=pk).exists():
-        return Response(f"Связи м-м с таким id нет?")
+def DeleteDishesOrders(request, pk):                 # передаем id заказа
+    try: 
+        order=Orders.objects.get(user=user, status="зарегистрирован", id=pk) # заказ определенного пользователя
+    except:
+        return Response("нет такого заказа")
+    if not DishesOrders.objects.filter(order=order.id).exists():
+        return Response(f"в заказе нет блюд")
 
     dishes_orders = get_object_or_404(DishesOrders, id=pk)
     dishes_orders.delete()
