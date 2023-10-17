@@ -128,8 +128,8 @@ def PostDishToOrder(request, pk):
 
     # dishes_orders = DishesOrders.objects.all()  # выводим все м-м
     # serializer = DishOrderSerializer(dishes_orders, many=True)
-    orders = Orders.objects.all()  # выводим все заказы
-    serializer = OrderSerializer(orders, many=True)
+    orders = Orders.objects.get(id=order_id)  # выводим все заказы
+    serializer = OrderSerializer(orders)
     return Response(serializer.data)
 
 #Orders
@@ -137,9 +137,11 @@ def PostDishToOrder(request, pk):
 @api_view(['GET'])                                  # все заказы
 def GetOrders(request):
     date_format = "%Y-%m-%d"
-    start_date_str = request.query_params.get('start', '2023-01-01')
-    end_date_str = request.query_params.get('end', '2023-12-31')
+    start_date_str = request.query_params.get("start", '2000-01-01')
+    end_date_str = request.query_params.get("end", '3023-12-31')
+    print(start_date_str)
     start = datetime.strptime(start_date_str, date_format).date()
+    print(start)
     end = datetime.strptime(end_date_str, date_format).date()
     orders = Orders.objects.filter(created_at__range=(start, end)).order_by('created_at')
     serializer = OrderSerializer(orders, many=True)
@@ -148,11 +150,12 @@ def GetOrders(request):
 
 @api_view(['GET'])                                  # 1 заказ
 def GetOrder(request, pk):
-    if not Orders.objects.filter(id=pk).exists():
+    try:
+        order = Orders.objects.get(id=pk)
+    except Orders.DoesNotExist:
         return Response(f"Заказа с таким id нет")
 
-    order = Orders.objects.get(id=pk)
-    serializer = OrderSerializer(order)
+    serializer = FullOrderSerializer(order)
     return Response(serializer.data)
 
 @api_view(['DELETE'])                               # удалить заказ?

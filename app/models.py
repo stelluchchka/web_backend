@@ -26,7 +26,7 @@ class Dishes(models.Model):
 
 
 class DishesOrders(models.Model):
-    order = models.ForeignKey('Orders', models.DO_NOTHING, blank=True, null=True)
+    order = models.ForeignKey('Orders', models.DO_NOTHING, related_name='dishes', blank=True, null=True)
     dish = models.ForeignKey('Dishes', models.DO_NOTHING, blank=True, null=True)
     quantity = models.IntegerField(blank=True, null=True)
 
