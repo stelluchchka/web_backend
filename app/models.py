@@ -56,7 +56,7 @@ class Users(models.Model):
     role = models.CharField(max_length=255, blank=True, null=True)
     login = models.CharField(max_length=255)
     def __str__(self):
-        return f'({self.role}: {self.name})'
+        return f'{self.name}'
     class Meta:
         managed = False
         db_table = 'users'
@@ -74,7 +74,7 @@ class Orders(models.Model):
     created_at = models.DateTimeField(blank=True, null=True)
     processed_at = models.DateTimeField(blank=True, null=True)
     completed_at = models.DateTimeField(blank=True, null=True)
-    user = models.ForeignKey('Users', models.DO_NOTHING, blank=True, null=True)
+    user = models.ForeignKey('Users', on_delete=models.DO_NOTHING, null=False, blank=False)
     moderator = models.ForeignKey('Users', models.DO_NOTHING, related_name='orders_moderator_set', blank=True, null=True)
     def __str__(self):
         return f'{self.status}'

@@ -7,6 +7,8 @@ from app.serializers import *
 from app.models import *
 from minio import Minio
 from datetime import datetime
+from django.db.models import Q
+
 
 user = Users(id=1, name="User", email="a", password=1234, role="user", login="aa")
 
@@ -18,9 +20,29 @@ user = Users(id=1, name="User", email="a", password=1234, role="user", login="aa
 #Dishes
 @api_view(['GET'])                               # все блюда
 def GetDishes(request):
-    dish = Dishes.objects.filter(status="есть")
-    serializer = DishSerializer(dish, many=True)
-    return Response(serializer.data)
+    try: 
+        order=Orders.objects.filter(user=user, status="зарегистрирован").latest('created_at') # заказ определенного пользователя
+        order_serializer = OrderSerializer(order)
+    except:
+        order_serializer=[]
+
+    min_price = request.query_params.get("min_price", '0')
+    max_price = request.query_params.get("max_price", '10000000')
+    tag = request.query_params.get("tag", '')
+    title = request.query_params.get("title", '')
+
+    filters = Q(status="есть") & Q(price__range=(min_price, max_price))
+    if tag != '':
+        filters &= Q(tags=tag)
+    if title != '':
+        filters &= Q(title=title)
+
+    dish = Dishes.objects.filter(filters)
+    dish_serializer = DishSerializer(dish, many=True)
+    return Response({
+        'order': order_serializer.data,
+        'dishes': dish_serializer.data
+    })
 
 @api_view(['POST'])                              # добавить блюдо
 def PostDishes(request):
@@ -41,7 +63,7 @@ def PostDishes(request):
         client.fput_object(bucket_name='img',
                            object_name=img_obj_name,
                            file_path=request.data["url"])
-        new_dish.url = f"minio://localhost:9000/img/{img_obj_name}"
+        new_dish.url = f"http://localhost:9000/img/{img_obj_name}"
     except Exception as e:
         return Response({"error": str(e)})
     
@@ -57,14 +79,14 @@ def PostDishes(request):
     # Сохраняем обновленные данные блюда после изменения url
     new_dish.save()
 
-    dish = Dishes.objects.filter(status="есть")
-    serializer = DishSerializer(dish, many=True)
+    # dish = Dishes.objects.filter(status="есть")
+    serializer = DishSerializer(new_dish)
     return Response(serializer.data)
 
 @api_view(['GET'])                                 # 1 блюдо
 def GetDish(request, pk):
-    if not Dishes.objects.filter(id=pk).exists():
-        return Response(f"Блюда с таким id нет")
+    if not Dishes.objects.filter(id=pk, status="есть").exists():
+        return Response(f"Такого блюда нет")
 
     dish = Dishes.objects.get(id=pk)
     serializer = DishSerializer(dish)
@@ -72,20 +94,20 @@ def GetDish(request, pk):
 
 @api_view(['DELETE'])                              # удалить блюдо
 def DeleteDish(request, pk):
-    if not Dishes.objects.filter(id=pk).exists():
-        return Response(f"Блюда с таким id нет")
+    if not Dishes.objects.filter(id=pk, status="есть").exists():
+        return Response(f"Такого блюда нет")
     dish = Dishes.objects.get(id=pk)
     dish.status = "удаленo"
     dish.save()
 
-    dish = Dishes.objects.filter(status="есть")
-    serializer = DishSerializer(dish, many=True)
-    return Response(serializer.data)
+    # dish = Dishes.objects.filter(status="есть")
+    # serializer = DishSerializer(dish, many=True)
+    return Response()
 
 @api_view(['PUT'])                                 # изменить блюдо
 def PutDish(request, pk):
     try:
-        dish = Dishes.objects.get(id=pk)
+        dish = Dishes.objects.get(id=pk, status="есть")
     except Dishes.DoesNotExist:
         return Response("Блюда с таким id нет")
 
@@ -99,9 +121,8 @@ def PutDish(request, pk):
     else:
         return Response(serializer.errors)
 
-@api_view(['POST'])                                 # добавить блюдо в заказ
+@api_view(['POST'])                                  # добавить блюдо в заказ
 def PostDishToOrder(request, pk):
-    quantity = int(request.data.get('quantity'))
     try: 
         order=Orders.objects.filter(user=user, status="зарегистрирован").latest('created_at') # заказ определенного пользователя
     except:
@@ -112,17 +133,20 @@ def PostDishToOrder(request, pk):
         )
         order.save()
 
+    if not Dishes.objects.filter(id=pk, status="есть").exists():
+        return Response(f"Такого блюда нет")
+
     order_id=order.id
     dish_id=pk
     try:
         dish_order=DishesOrders.objects.get(order_id=order_id, dish_id=dish_id) #проверка есть ли такая м-м
-        dish_order.quantity=dish_order.quantity+quantity      # если да, не создаем новую а меняем существующую
+        dish_order.quantity=dish_order.quantity+1    # если да, не создаем новую а меняем существующую
         dish_order.save()
     except:
-        dish_order = DishesOrders(                            # если нет, создаем м-м
+        dish_order = DishesOrders(                   # если нет, создаем м-м
             order_id=order_id,
             dish_id=dish_id,
-            quantity=quantity
+            quantity=1
         )
         dish_order.save()
 
@@ -139,14 +163,19 @@ def GetOrders(request):
     date_format = "%Y-%m-%d"
     start_date_str = request.query_params.get("start", '2000-01-01')
     end_date_str = request.query_params.get("end", '3023-12-31')
-    print(start_date_str)
     start = datetime.strptime(start_date_str, date_format).date()
-    print(start)
     end = datetime.strptime(end_date_str, date_format).date()
-    orders = Orders.objects.filter(created_at__range=(start, end)).order_by('created_at')
+    status = request.query_params.get("status", '')
+    filters = ~Q(status="отменен") & Q(created_at__range=(start, end))
+    if status != '':
+        filters &= Q(status=status)
+        
+    orders = Orders.objects.filter(filters).order_by('created_at')
+    print(orders)
     serializer = OrderSerializer(orders, many=True)
     
     return Response(serializer.data)
+
 
 @api_view(['GET'])                                  # 1 заказ
 def GetOrder(request, pk):
@@ -158,19 +187,19 @@ def GetOrder(request, pk):
     serializer = FullOrderSerializer(order)
     return Response(serializer.data)
 
-@api_view(['DELETE'])                               # удалить заказ?
+@api_view(['DELETE'])                               # удалить заказ
 def DeleteOrder(request, pk):
     if not Orders.objects.filter(id=pk).exists():
         return Response(f"Заказа с таким id нет")
     order = Orders.objects.get(id=pk)
-    order.status = "отказ"
+    order.status = "отменен"
     order.save()
 
-    order = Orders.objects.all()
-    serializer = OrderSerializer(order, many=True)
-    return Response(serializer.data)
+    # order = Orders.objects.all()
+    # serializer = OrderSerializer(order, many=True)
+    return Response()
 
-@api_view(['PUT'])                                  # изменить заказ
+@api_view(['PUT'])                                  # изменить заказ(назначить модератора)
 def PutOrder(request, pk):
     try:
         order = Orders.objects.get(id=pk)
@@ -185,7 +214,7 @@ def PutOrder(request, pk):
     serializer = OrderSerializer(order, many=True)
     return Response(serializer.data)
 
-@api_view(['PUT'])                                  # статусы админа
+@api_view(['PUT'])                                  # статусы модератора
 def ConfirmOrder(request, pk):
     if not Orders.objects.filter(id=pk).exists():
         return Response(f"Заказа с таким id нет")
@@ -212,12 +241,12 @@ def ToOrder(request, pk):
     order = Orders.objects.get(id=pk)
 
     if order.status != "зарегистрирован":
-        return Response("Такого заказа не зарегистрировано")
+        return Response(serializer.errors)
     if request.data["status"] not in ["отменен", "сформирован"]:
-        return Response("Ошибка")
+        return Response(serializer.errors)
 
     order.status = request.data["status"]
-    order.processed_at=datetime.now()   #.strftime("%d.%m.%Y %H:%M:%S")
+    order.processed_at=datetime.now()           #.strftime("%d.%m.%Y %H:%M:%S")
     order.save()
 
     serializer = OrderSerializer(order)
