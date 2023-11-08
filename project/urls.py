@@ -34,7 +34,7 @@ urlpatterns = [
     # path('orders/post', views.PostOrders, name = 'orders_post'),
     path('orders/<int:pk>/', views.GetOrder, name = 'order'),
     path('orders/<int:pk>/delete', views.DeleteOrder, name = 'order_delete'),
-    path('orders/<int:pk>/put', views.PutOrder, name = 'order_put'),
+    # path('orders/<int:pk>/put', views.PutOrder, name = 'order_put'),
 
     path('orders/<int:pk>/confirm', views.ConfirmOrder, name = 'order_confirm'),
     path('orders/<int:pk>/accept', views.ToOrder, name = 'order_accept'),

@@ -17,7 +17,6 @@ class Dishes(models.Model):
     status = models.CharField(max_length=50, blank=True, null=True, choices=STATUS_CHOICES)
     expiry_date = models.CharField(max_length=50, blank=True, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
-    urrl = models.BinaryField(blank=True, null=True)
     def __str__(self):
         return self.title
     class Meta:

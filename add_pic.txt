@@ -1,0 +1,85 @@
+def add_pic(new_dish, pic, chef):
+    client = Minio(endpoint="localhost:9000",
+                   access_key='minioadmin',
+                   secret_key='minioadmin',
+                   secure=False)
+    i = new_dish.id-1
+
+    if chef == 1:
+        img_obj_name = f"chef{i}.png"
+    else:
+        img_obj_name = f"{i}.png"
+
+    if not pic:
+        return Response({"error": "Нет файла для изображения."})
+    result = process_file_upload(pic, client, img_obj_name)
+    if 'error' in result:
+        return Response(result)
+
+    if chef == 1:
+        new_dish.chef_url = result
+    else:
+        new_dish.url = result
+
+    new_dish.save()
+    return Response({"message": "success"})
+
+
+
+
+
+@api_view(['PUT'])                                 # изменить блюдо
+def PutDish(request, pk):
+    try:
+        dish = Dishes.objects.get(id=pk, status="есть")
+    except Dishes.DoesNotExist:
+        return Response("Блюда с таким id нет")
+
+    serializer = DishSerializer(dish, data=request.data, partial=True)
+
+    if 'url' in serializer.initial_data:
+        pic_result = add_pic(dish, serializer.initial_data['url'], 0)
+        if 'error' in pic_result.data:
+            return pic_result
+
+    if 'chef_url' in serializer.initial_data:
+        pic_result = add_pic(dish, serializer.initial_data['chef_url'], 0)
+        if 'error' in pic_result.data:
+            return pic_result
+
+    if serializer.is_valid():
+        serializer.save()
+        dish = Dishes.objects.filter(status="есть")
+        serializer = DishSerializer(dish, many=True)
+        return Response(serializer.data)
+    else:
+        return Response(serializer.errors)
+
+
+
+
+@api_view(['POST'])                              # добавить блюдо
+def PostDishes(request):
+    serializer = DishSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors)
+    new_dish = serializer.save()
+
+    # # pic
+    # pic = request.FILES.get("url")
+    # pic_result = add_pic(new_dish, pic, 0)
+    # if 'error' in pic_result.data:    # Если в результате вызова add_pic результат - ошибка, возвращаем его.
+    #     return pic_result
+    # # chef_pic
+    # chef_pic = request.FILES.get("chef_url")
+    # chef_pic_result = add_pic(new_dish, chef_pic, 1)
+    # if 'error' in chef_pic_result.data:    # Если в результате вызова add_pic результат - ошибка, возвращаем его.
+    #     return chef_pic_result
+
+    pic_result = add_pics(new_dish, request)
+    if 'error' in pic_result.data:    # Если в результате вызова add_pic результат - ошибка, возвращаем его.
+        return pic_result
+
+    # dish = Dishes.objects.filter(status="есть")
+    serializer = DishSerializer(new_dish)
+    return Response(serializer.data)

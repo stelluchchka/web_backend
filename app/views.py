@@ -8,14 +8,54 @@ from app.models import *
 from minio import Minio
 from datetime import datetime
 from django.db.models import Q
+from django.core.files.uploadedfile import InMemoryUploadedFile
+
 
 
 user = Users(id=1, name="User", email="a", password=1234, role="user", login="aa")
+moderator = Users(id=2, name="mod", email="b", password=12345, role="moderator", login="bb")
 
 # class OrderViewSet(viewsets.ModelViewSet):
 #     queryset = Orders.objects.all()
 #     serializer_class = OrderSerializer
 
+def process_file_upload(file_object: InMemoryUploadedFile, client, image_name):
+    try:
+        client.put_object('img', image_name, file_object, file_object.size)
+        return f"http://localhost:9000/img/{image_name}"
+    except Exception as e:
+        return {"error": str(e)}
+
+def add_pics(new_dish, request):
+    client = Minio(endpoint="localhost:9000",
+                   access_key='minioadmin',
+                   secret_key='minioadmin',
+                   secure=False)
+    i = new_dish.id-1
+
+    # pic
+    img_obj_name = f"{i}.png"
+    dish_pic = request.FILES.get("pic")
+    if not dish_pic:
+        return Response({"error": "Нет файла для изображения блюда."})
+    result = process_file_upload(dish_pic, client, img_obj_name)
+    if 'error' in result:
+        return Response(result)
+    new_dish.url = result
+    
+    # chef_pic
+    chef_img_obj_name = f"chef{i}.png"
+    chef_pic = request.FILES.get("chef_pic")
+    if not chef_pic:
+        return Response({"error": "Нет файла для изображения шеф-повара."})
+    result = process_file_upload(chef_pic, client, chef_img_obj_name)
+    if 'error' in result:
+        return Response(result)
+    new_dish.chef_url = result
+    
+    # Сохраняем обновленные данные блюда после изменения url
+    new_dish.save()
+    return Response({"success"})
 
 #Dishes
 @api_view(['GET'])                               # все блюда
@@ -23,8 +63,9 @@ def GetDishes(request):
     try: 
         order=Orders.objects.filter(user=user, status="зарегистрирован").latest('created_at') # заказ определенного пользователя
         order_serializer = OrderSerializer(order)
+        print(order_serializer)
     except:
-        order_serializer=[]
+        order_serializer=[]                     #!!!!!!!!!!error!!
 
     min_price = request.query_params.get("min_price", '0')
     max_price = request.query_params.get("max_price", '10000000')
@@ -49,35 +90,13 @@ def PostDishes(request):
     serializer = DishSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors)
+
     new_dish = serializer.save()
-    #картинки выгрузить в minio и в поле в бд внести адрес к этому объекту в хранилище
-    client = Minio(endpoint="localhost:9000",
-                   access_key='minioadmin',
-                   secret_key='minioadmin',
-                   secure=False)
-    i=new_dish.id-1
-    img_obj_name = f"{i}.png"
-    chef_img_obj_name = f"chef{i}.png"
-    # Загружаем изображение в Minio
-    try:
-        client.fput_object(bucket_name='img',
-                           object_name=img_obj_name,
-                           file_path=request.data["url"])
-        new_dish.url = f"http://localhost:9000/img/{img_obj_name}"
-    except Exception as e:
-        return Response({"error": str(e)})
-    
-    # Загружаем изображение повара в Minio
-    try:
-        client.fput_object(bucket_name='img',
-                           object_name=chef_img_obj_name,
-                           file_path=request.data["chef_url"])
-        new_dish.chef_url = f"minio://localhost:9000/img/{chef_img_obj_name}"
-    except Exception as e:
-        return Response({"error": str(e)})
-    
-    # Сохраняем обновленные данные блюда после изменения url
-    new_dish.save()
+
+    pics_result = add_pics(new_dish, request)
+    # Если в результате вызова функции add_pics результат оказался ошибкой, возвращаем его.
+    if 'error' in pics_result.data:
+        return pics_result
 
     # dish = Dishes.objects.filter(status="есть")
     serializer = DishSerializer(new_dish)
@@ -199,20 +218,17 @@ def DeleteOrder(request, pk):
     # serializer = OrderSerializer(order, many=True)
     return Response()
 
-@api_view(['PUT'])                                  # изменить заказ(назначить модератора)
-def PutOrder(request, pk):
-    try:
-        order = Orders.objects.get(id=pk)
-    except Orders.DoesNotExist:
-        return Response("Заказа с таким id нет")
-    serializer = OrderSerializer(order, data=request.data, partial=True)
-    if not serializer.is_valid():
-        return Response(serializer.errors)
-    serializer.save()
-
-    order = Orders.objects.all()
-    serializer = OrderSerializer(order, many=True)
-    return Response(serializer.data)
+# @api_view(['PUT'])                                  # изменить заказ(назначить модератора)
+# def PutOrder(request, pk):
+#     try:
+#         order = Orders.objects.get(id=pk)
+#     except Orders.DoesNotExist:
+#         return Response("Заказа с таким id нет")
+#     order.moderator=request.data["moderator"]
+#     order.save()
+#     order = Orders.objects.all()
+#     serializer = OrderSerializer(order, many=True)
+#     return Response(serializer.data)
 
 @api_view(['PUT'])                                  # статусы модератора
 def ConfirmOrder(request, pk):
@@ -247,6 +263,7 @@ def ToOrder(request, pk):
 
     order.status = request.data["status"]
     order.processed_at=datetime.now()           #.strftime("%d.%m.%Y %H:%M:%S")
+    order.moderator=moderator                   # назначаем модератора
     order.save()
 
     serializer = OrderSerializer(order)
