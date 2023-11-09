@@ -11,7 +11,6 @@ from django.db.models import Q
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
 
-
 user = Users(id=1, name="User", email="a", password=1234, role="user", login="aa")
 moderator = Users(id=2, name="mod", email="b", password=12345, role="moderator", login="bb")
 
@@ -26,36 +25,67 @@ def process_file_upload(file_object: InMemoryUploadedFile, client, image_name):
     except Exception as e:
         return {"error": str(e)}
 
-def add_pics(new_dish, request):
+# def add_pics(new_dish, request):
+#     client = Minio(endpoint="localhost:9000",
+#                    access_key='minioadmin',
+#                    secret_key='minioadmin',
+#                    secure=False)
+#     i = new_dish.id-1
+
+#     # pic
+#     img_obj_name = f"{i}.png"
+#     dish_pic = request.FILES.get("pic")
+#     if not dish_pic:
+#         return Response({"error": "Нет файла для изображения блюда."})
+#     result = process_file_upload(dish_pic, client, img_obj_name)
+#     if 'error' in result:
+#         return Response(result)
+#     new_dish.url = result
+    
+#     # chef_pic
+#     chef_img_obj_name = f"chef{i}.png"
+#     chef_pic = request.FILES.get("chef_pic")
+#     if not chef_pic:
+#         return Response({"error": "Нет файла для изображения шеф-повара."})
+#     result = process_file_upload(chef_pic, client, chef_img_obj_name)
+#     if 'error' in result:
+#         return Response(result)
+#     new_dish.chef_url = result
+    
+#     # Сохраняем данные блюда 
+#     new_dish.save()
+#     return Response({"success"})
+
+
+def add_pic(new_dish, pic, chef):
     client = Minio(endpoint="localhost:9000",
                    access_key='minioadmin',
                    secret_key='minioadmin',
                    secure=False)
     i = new_dish.id-1
 
-    # pic
-    img_obj_name = f"{i}.png"
-    dish_pic = request.FILES.get("pic")
-    if not dish_pic:
-        return Response({"error": "Нет файла для изображения блюда."})
-    result = process_file_upload(dish_pic, client, img_obj_name)
+    if chef == 1:
+        img_obj_name = f"chef{i}.png"
+    else:
+        img_obj_name = f"{i}.png"
+
+    if not pic:
+        if chef == 1:
+            return Response({"error": "Нет файла для изображения повара."})
+        else:
+            return Response({"error": "Нет файла для изображения блюда."})
+    result = process_file_upload(pic, client, img_obj_name)
     if 'error' in result:
         return Response(result)
-    new_dish.url = result
-    
-    # chef_pic
-    chef_img_obj_name = f"chef{i}.png"
-    chef_pic = request.FILES.get("chef_pic")
-    if not chef_pic:
-        return Response({"error": "Нет файла для изображения шеф-повара."})
-    result = process_file_upload(chef_pic, client, chef_img_obj_name)
-    if 'error' in result:
-        return Response(result)
-    new_dish.chef_url = result
-    
-    # Сохраняем обновленные данные блюда после изменения url
+
+    if chef == 1:
+        new_dish.chef_url = result
+    else:
+        new_dish.url = result
+
     new_dish.save()
-    return Response({"success"})
+    return Response({"message": "success"})
+
 
 #Dishes
 @api_view(['GET'])                               # все блюда
@@ -90,13 +120,22 @@ def PostDishes(request):
     serializer = DishSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors)
-
     new_dish = serializer.save()
 
-    pics_result = add_pics(new_dish, request)
-    # Если в результате вызова функции add_pics результат оказался ошибкой, возвращаем его.
-    if 'error' in pics_result.data:
-        return pics_result
+    # pic
+    pic = request.FILES.get("pic")
+    pic_result = add_pic(new_dish, pic, 0)
+    if 'error' in pic_result.data:    # Если в результате вызова add_pic результат - ошибка, возвращаем его.
+        return pic_result
+    # chef_pic
+    chef_pic = request.FILES.get("chef_pic")
+    chef_pic_result = add_pic(new_dish, chef_pic, 1)
+    if 'error' in chef_pic_result.data:    # Если в результате вызова add_pic результат - ошибка, возвращаем его.
+        return chef_pic_result
+
+    # pic_result = add_pics(new_dish, request)  # добавление сразу 2 картинок
+    # if 'error' in pic_result.data:
+    #     return pic_result
 
     # dish = Dishes.objects.filter(status="есть")
     serializer = DishSerializer(new_dish)
@@ -132,10 +171,22 @@ def PutDish(request, pk):
 
     serializer = DishSerializer(dish, data=request.data, partial=True)
 
+    if 'pic' in serializer.initial_data:
+        pic_result = add_pic(dish, serializer.initial_data['pic'], 0)
+        if 'error' in pic_result.data:
+            return pic_result
+
+    if 'chef_pic' in serializer.initial_data:
+        pic_result = add_pic(dish, serializer.initial_data['chef_pic'], 1)
+        if 'error' in pic_result.data:
+            return pic_result
+
     if serializer.is_valid():
         serializer.save()
-        dish = Dishes.objects.filter(status="есть")
-        serializer = DishSerializer(dish, many=True)
+        # dish = Dishes.objects.filter(status="есть")
+        dish = Dishes.objects.get(id=pk)
+        serializer = DishSerializer(dish)
+
         return Response(serializer.data)
     else:
         return Response(serializer.errors)
