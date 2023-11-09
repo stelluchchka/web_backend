@@ -25,38 +25,6 @@ def process_file_upload(file_object: InMemoryUploadedFile, client, image_name):
     except Exception as e:
         return {"error": str(e)}
 
-# def add_pics(new_dish, request):
-#     client = Minio(endpoint="localhost:9000",
-#                    access_key='minioadmin',
-#                    secret_key='minioadmin',
-#                    secure=False)
-#     i = new_dish.id-1
-
-#     # pic
-#     img_obj_name = f"{i}.png"
-#     dish_pic = request.FILES.get("pic")
-#     if not dish_pic:
-#         return Response({"error": "Нет файла для изображения блюда."})
-#     result = process_file_upload(dish_pic, client, img_obj_name)
-#     if 'error' in result:
-#         return Response(result)
-#     new_dish.url = result
-    
-#     # chef_pic
-#     chef_img_obj_name = f"chef{i}.png"
-#     chef_pic = request.FILES.get("chef_pic")
-#     if not chef_pic:
-#         return Response({"error": "Нет файла для изображения шеф-повара."})
-#     result = process_file_upload(chef_pic, client, chef_img_obj_name)
-#     if 'error' in result:
-#         return Response(result)
-#     new_dish.chef_url = result
-    
-#     # Сохраняем данные блюда 
-#     new_dish.save()
-#     return Response({"success"})
-
-
 def add_pic(new_dish, pic, chef):
     client = Minio(endpoint="localhost:9000",
                    access_key='minioadmin',
@@ -132,10 +100,6 @@ def PostDishes(request):
     chef_pic_result = add_pic(new_dish, chef_pic, 1)
     if 'error' in chef_pic_result.data:    # Если в результате вызова add_pic результат - ошибка, возвращаем его.
         return chef_pic_result
-
-    # pic_result = add_pics(new_dish, request)  # добавление сразу 2 картинок
-    # if 'error' in pic_result.data:
-    #     return pic_result
 
     # dish = Dishes.objects.filter(status="есть")
     serializer = DishSerializer(new_dish)
