@@ -58,13 +58,6 @@ def add_pic(new_dish, pic, chef):
 #Dishes
 @api_view(['GET'])                               # все блюда
 def GetDishes(request):
-    try: 
-        order=Orders.objects.filter(user=user, status="зарегистрирован").latest('created_at') # заказ определенного пользователя
-        order_serializer = OrderSerializer(order)
-        print(order_serializer)
-    except:
-        order_serializer=[]                     #!!!!!!!!!!error!!
-
     min_price = request.query_params.get("min_price", '0')
     max_price = request.query_params.get("max_price", '10000000')
     tag = request.query_params.get("tag", '')
@@ -78,9 +71,19 @@ def GetDishes(request):
 
     dish = Dishes.objects.filter(filters)
     dish_serializer = DishSerializer(dish, many=True)
-    return Response({
-        'order': order_serializer.data,
-        'dishes': dish_serializer.data
+    # заказ определенного пользователя
+    try: 
+        order=Orders.objects.filter(user=user, status="зарегистрирован").latest('created_at')
+        order_serializer = OrderSerializer(order)
+        return Response({
+            'order': order_serializer.data,
+            'dishes': dish_serializer.data
+    })
+    # заказа-черновика нет
+    except:
+        return Response({
+            'order': [],
+            'dishes': dish_serializer.data
     })
 
 @api_view(['POST'])                              # добавить блюдо
@@ -205,7 +208,6 @@ def GetOrders(request):
         filters &= Q(status=status)
         
     orders = Orders.objects.filter(filters).order_by('created_at')
-    print(orders)
     serializer = OrderSerializer(orders, many=True)
     
     return Response(serializer.data)
