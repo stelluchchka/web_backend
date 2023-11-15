@@ -1,6 +1,6 @@
 from app.models import *
 from rest_framework import serializers
-
+# from app.models import CustomUser
 
 class DishSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,3 +54,10 @@ class FullOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Orders
         fields = ['id', 'status', 'created_at', 'processed_at', 'completed_at', 'user', 'moderator', 'dishes']
+
+class UserSerializer(serializers.ModelSerializer):
+    is_staff = serializers.BooleanField(default=False, required=False)
+    is_superuser = serializers.BooleanField(default=False, required=False)
+    class Meta:
+        model = AuthUser
+        fields = "__all__"

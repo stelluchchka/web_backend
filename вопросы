@@ -1,0 +1,2 @@
+я в декораторе @swagger_auto_schema(method='put', request_body=DishSerializer) прописываю request_body
+но а если response это ошибка

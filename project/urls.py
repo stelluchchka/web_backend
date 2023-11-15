@@ -1,24 +1,39 @@
 from django.contrib import admin
 from app import views
 from django.urls import include, path
+from rest_framework import permissions
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 from rest_framework import routers
 
 # routerDish = routers.DefaultRouter()
 # routerOrder = routers.DefaultRouter()
 # router3 = routers.DefaultRouter()
 
-
+router = routers.DefaultRouter()
+router.register(r'user', views.UserViewSet, basename='user')
 # routerDish.register(r'dishes', views.DishViewSet)
 # routerOrder.register(r'orders', views.OrderViewSet)
 # router3.register(r'dishes_orders', views.DishesOrdersViewSet)
+
+schema_view = get_schema_view(
+   openapi.Info(
+      title="Snippets API",
+      default_version='v1',
+      description="Test description",
+      terms_of_service="https://www.google.com/policies/terms/",
+      contact=openapi.Contact(email="contact@snippets.local"),
+      license=openapi.License(name="BSD License"),
+   ),
+   public=True,
+   permission_classes=(permissions.AllowAny,),
+)
 
 urlpatterns = [
     # path('', include(routerDish.urls)),
     # path('', include(routerOrder.urls)),
     # path('', include(router3.urls)),
 
-
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('admin/', admin.site.urls),
 
     #Dish
@@ -43,5 +58,10 @@ urlpatterns = [
     path('dishes_orders/<int:pk>/put', views.PutDishesOrders, name = 'dishes_orders_put'),
     path('dishes_orders/<int:pk>/delete', views.DeleteDishesOrders, name = 'dishes_orders_delete'),
 
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 
+    # Login
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('login',  views.login_view, name='login'),
+    path('logout', views.logout_view, name='logout'),
 ]
