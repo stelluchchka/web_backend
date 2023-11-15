@@ -1,16 +1,14 @@
 from app.serializers import *
 from app.models import *
 from app.permissions import IsManager, IsAdmin
+from app.minio import add_pic
 
 from datetime import datetime
 from drf_yasg.utils import swagger_auto_schema
 from django.db.models import Q
-from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import *
 from django.http import HttpResponse
-
-from minio import Minio
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
@@ -18,6 +16,31 @@ from rest_framework.response import *
 from rest_framework.status import *
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.views import APIView
+
+user = Users(id=1, name="User", email="a", password=1234, role="user", login="aa")
+moderator = Users(id=2, name="mod", email="b", password=12345, role="moderator", login="bb")
+
+@permission_classes([AllowAny])
+@authentication_classes([])
+def login_view(request):
+    email = request.POST["email"] # передали email и password
+    password = request.POST["password"]
+    user = authenticate(request, email=email, password=password)
+    if user is not None:
+        login(request, user)
+        return HttpResponse("{'status': 'ok'}")
+    else:
+        return HttpResponse("{'status': 'error', 'error': 'login failed'}")
+
+@permission_classes([AllowAny])
+@authentication_classes([])
+def logout_view(request):
+    logout(request._request)
+    return Response({'status': 'Success'})
+
+
+
 
 class UserViewSet(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, BasicAuthentication]
@@ -51,177 +74,197 @@ class UserViewSet(viewsets.ModelViewSet):
             permission_classes = [IsAdmin]
         return [permission() for permission in permission_classes]
 
-@permission_classes([AllowAny])
-@authentication_classes([])
-def login_view(request):
-    email = request.POST["email"] # передали email и password
-    password = request.POST["password"]
-    user = authenticate(request, email=email, password=password)
-    if user is not None:
-        login(request, user)
-        return HttpResponse("{'status': 'ok'}")
-    else:
-        return HttpResponse("{'status': 'error', 'error': 'login failed'}")
 
-@permission_classes([AllowAny])
-@authentication_classes([])
-def logout_view(request):
-    logout(request._request)
-    return Response({'status': 'Success'})
+class DishesViewSet(APIView):
+    model_class = Dishes
+    serializer_class = DishSerializer
 
+    def get(self, request, format=None):
+        min_price = request.query_params.get("min_price", '0')
+        max_price = request.query_params.get("max_price", '10000000')
+        tag = request.query_params.get("tag", '')
+        title = request.query_params.get("title", '')
 
+        filters = Q(status="есть") & Q(price__range=(min_price, max_price))
+        if tag != '':
+            filters &= Q(tags=tag)
+        if title != '':
+            filters &= Q(title=title)
 
+        dish = Dishes.objects.filter(filters)
+        dish_serializer = self.serializer_class(dish, many=True)
+        # заказ определенного пользователя
+        try: 
+            order=Orders.objects.filter(user=user, status="зарегистрирован").latest('created_at')
+            order_serializer = OrderSerializer(order)
+            return Response({
+                'order': order_serializer.data,
+                'dishes': dish_serializer.data
+        })
+        # заказа-черновика нет
+        except:
+            return Response({
+                'order': [],
+                'dishes': dish_serializer.data
+        })
 
-user = Users(id=1, name="User", email="a", password=1234, role="user", login="aa")
-moderator = Users(id=2, name="mod", email="b", password=12345, role="moderator", login="bb")
+    def post(self, request, format=None):
+        serializer = self.serializer_class(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors)
+        new_dish = serializer.save()
 
-
-def process_file_upload(file_object: InMemoryUploadedFile, client, image_name):
-    try:
-        client.put_object('img', image_name, file_object, file_object.size)
-        return f"http://localhost:9000/img/{image_name}"
-    except Exception as e:
-        return {"error": str(e)}
-
-def add_pic(new_dish, pic, chef):
-    client = Minio(endpoint="localhost:9000",
-                   access_key='minioadmin',
-                   secret_key='minioadmin',
-                   secure=False)
-    i = new_dish.id-1
-
-    if chef == 1:
-        img_obj_name = f"chef{i}.png"
-    else:
-        img_obj_name = f"{i}.png"
-
-    if not pic:
-        if chef == 1:
-            return Response({"error": "Нет файла для изображения повара."})
-        else:
-            return Response({"error": "Нет файла для изображения блюда."})
-    result = process_file_upload(pic, client, img_obj_name)
-    if 'error' in result:
-        return Response(result)
-
-    if chef == 1:
-        new_dish.chef_url = result
-    else:
-        new_dish.url = result
-
-    new_dish.save()
-    return Response({"message": "success"})
-
-
-#Dishes
-@api_view(['GET'])                               # все блюда
-def GetDishes(request):
-    min_price = request.query_params.get("min_price", '0')
-    max_price = request.query_params.get("max_price", '10000000')
-    tag = request.query_params.get("tag", '')
-    title = request.query_params.get("title", '')
-
-    filters = Q(status="есть") & Q(price__range=(min_price, max_price))
-    if tag != '':
-        filters &= Q(tags=tag)
-    if title != '':
-        filters &= Q(title=title)
-
-    dish = Dishes.objects.filter(filters)
-    dish_serializer = DishSerializer(dish, many=True)
-    # заказ определенного пользователя
-    try: 
-        order=Orders.objects.filter(user=user, status="зарегистрирован").latest('created_at')
-        order_serializer = OrderSerializer(order)
-        return Response({
-            'order': order_serializer.data,
-            'dishes': dish_serializer.data
-    })
-    # заказа-черновика нет
-    except:
-        return Response({
-            'order': [],
-            'dishes': dish_serializer.data
-    })
-
-@swagger_auto_schema(method='post', request_body=DishSerializer)
-@permission_classes([IsAdmin])
-@api_view(['POST'])                              # добавить блюдо
-def PostDishes(request):
-    serializer = DishSerializer(data=request.data)
-    if not serializer.is_valid():
-        return Response(serializer.errors)
-    new_dish = serializer.save()
-
-    # pic
-    pic = request.FILES.get("pic")
-    pic_result = add_pic(new_dish, pic, 0)
-    if 'error' in pic_result.data:    # Если в результате вызова add_pic результат - ошибка, возвращаем его.
-        return pic_result
-    # chef_pic
-    chef_pic = request.FILES.get("chef_pic")
-    chef_pic_result = add_pic(new_dish, chef_pic, 1)
-    if 'error' in chef_pic_result.data:    # Если в результате вызова add_pic результат - ошибка, возвращаем его.
-        return chef_pic_result
-
-    # dish = Dishes.objects.filter(status="есть")
-    serializer = DishSerializer(new_dish)
-    return Response(serializer.data)
-
-@api_view(['GET'])                                 # 1 блюдо
-def GetDish(request, pk):
-    if not Dishes.objects.filter(id=pk, status="есть").exists():
-        return Response(f"Такого блюда нет")
-
-    dish = Dishes.objects.get(id=pk)
-    serializer = DishSerializer(dish)
-    return Response(serializer.data)
-
-@swagger_auto_schema(method='delete')
-@permission_classes([IsAdmin])
-@api_view(['DELETE'])                              # удалить блюдо
-def DeleteDish(request, pk):
-    if not Dishes.objects.filter(id=pk, status="есть").exists():
-        return Response(f"Такого блюда нет")
-    dish = Dishes.objects.get(id=pk)
-    dish.status = "удаленo"
-    dish.save()
-
-    # dish = Dishes.objects.filter(status="есть")
-    # serializer = DishSerializer(dish, many=True)
-    return Response({"message": "success"})
-
-@swagger_auto_schema(method='put', request_body=DishSerializer)
-@permission_classes([IsAdmin])
-@api_view(['PUT'])                                 # изменить блюдо
-def PutDish(request, pk):
-    try:
-        dish = Dishes.objects.get(id=pk, status="есть")
-    except Dishes.DoesNotExist:
-        return Response("Блюда с таким id нет")
-
-    serializer = DishSerializer(dish, data=request.data, partial=True)
-
-    if 'pic' in serializer.initial_data:
-        pic_result = add_pic(dish, serializer.initial_data['pic'], 0)
-        if 'error' in pic_result.data:
+        # pic
+        pic = request.FILES.get("pic")
+        pic_result = add_pic(new_dish, pic, 0)
+        if 'error' in pic_result.data:    # Если в результате вызова add_pic результат - ошибка, возвращаем его.
             return pic_result
+        # chef_pic
+        chef_pic = request.FILES.get("chef_pic")
+        chef_pic_result = add_pic(new_dish, chef_pic, 1)
+        if 'error' in chef_pic_result.data:    # Если в результате вызова add_pic результат - ошибка, возвращаем его.
+            return chef_pic_result
 
-    if 'chef_pic' in serializer.initial_data:
-        pic_result = add_pic(dish, serializer.initial_data['chef_pic'], 1)
-        if 'error' in pic_result.data:
-            return pic_result
-
-    if serializer.is_valid():
-        serializer.save()
         # dish = Dishes.objects.filter(status="есть")
-        dish = Dishes.objects.get(id=pk)
-        serializer = DishSerializer(dish)
-
+        serializer = self.serializer_class(new_dish)
         return Response(serializer.data)
-    else:
-        return Response(serializer.errors)
 
+
+class DishViewSet(APIView):
+    model_class = Dishes
+    serializer_class = DishSerializer
+
+    def  get(self, request, pk, format=None):                                 # 1 блюдо
+        if not Dishes.objects.filter(id=pk, status="есть").exists():
+            return Response(f"Такого блюда нет")
+
+        dish = Dishes.objects.get(id=pk)
+        serializer = self.serializer_class(dish)
+        return Response(serializer.data)
+
+    def  delete(self, request, pk, format=None):                              # удалить блюдо
+        if not Dishes.objects.filter(id=pk, status="есть").exists():
+            return Response(f"Такого блюда нет")
+        dish = Dishes.objects.get(id=pk)
+        dish.status = "удаленo"
+        dish.save()
+        # dish = Dishes.objects.filter(status="есть")
+        # serializer = self.serializer_class(dish, many=True)
+        return Response({"message": "success"})
+
+    def  put(self, request, pk, format=None):                                 # изменить блюдо
+        try:
+            dish = Dishes.objects.get(id=pk, status="есть")
+        except Dishes.DoesNotExist:
+            return Response("Блюда с таким id нет")
+
+        serializer = self.serializer_class(dish, data=request.data, partial=True)
+
+        if 'pic' in serializer.initial_data:
+            pic_result = add_pic(dish, serializer.initial_data['pic'], 0)
+            if 'error' in pic_result.data:
+                return pic_result
+
+        if 'chef_pic' in serializer.initial_data:
+            pic_result = add_pic(dish, serializer.initial_data['chef_pic'], 1)
+            if 'error' in pic_result.data:
+                return pic_result
+
+        if serializer.is_valid():
+            serializer.save()
+            # dish = Dishes.objects.filter(status="есть")
+            dish = Dishes.objects.get(id=pk)
+            serializer = self.serializer_class(dish)
+
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors)
+
+
+class OrdersViewSet(APIView):
+    model_class = Orders
+    serializer_class = OrderSerializer
+
+    @permission_classes([IsManager])
+    def get(self, request, format=None):                                  # все заказы
+        date_format = "%Y-%m-%d"
+        start_date_str = request.query_params.get("start", '2000-01-01')
+        end_date_str = request.query_params.get("end", '3023-12-31')
+        start = datetime.strptime(start_date_str, date_format).date()
+        end = datetime.strptime(end_date_str, date_format).date()
+        status = request.query_params.get("status", '')
+        filters = ~Q(status="отменен") & Q(created_at__range=(start, end))
+        if status != '':
+            filters &= Q(status=status)
+            
+        orders = Orders.objects.filter(filters).order_by('created_at')
+        serializer = self.serializer_class(orders, many=True)
+        
+        return Response(serializer.data)
+
+
+class OrderViewSet(APIView):
+    model_class = Orders
+    serializer_class = FullOrderSerializer
+
+    def  get(self, request, pk, format=None):                      # 1 заказ
+        try:
+            order = Orders.objects.get(id=pk)
+        except Orders.DoesNotExist:
+            return Response(f"Заказа с таким id нет")
+
+        serializer = self.serializer_class(order)
+        return Response(serializer.data)
+    
+    def delete(self, request, pk, format=None):                      # удалить заказ
+        if not Orders.objects.filter(id=pk).exists():
+            return Response(f"Заказа с таким id нет")
+        order = Orders.objects.get(id=pk)
+        order.status = "отменен"
+        order.save()
+        # order = Orders.objects.all()
+        # serializer = OrderSerializer(order, many=True)
+        return Response({"status": "success"})
+
+
+class DishesOrdersViewSet(APIView):
+    model_class = DishesOrders
+    serializer_class = DishOrderSerializer
+
+    def put(self, request, pk, format=None):                   # изменение м-м(кол-во), передаем id заказа
+        try: 
+            order=Orders.objects.get(user=user, status="зарегистрирован", id=pk) # заказ определенного пользователя
+        except:
+            return Response("нет такого заказа")
+        if not DishesOrders.objects.filter(order=order.id).exists():
+            return Response(f"в заказе нет блюд")
+        dishes_orders = DishesOrders.objects.get(id=pk)
+        dishes_orders.quantity = request.data["quantity"]
+        dishes_orders.save()
+
+        dishes_orders = DishesOrders.objects.all()
+        serializer = self.serializer_class(dishes_orders, many=True)
+        return Response(serializer.data)
+
+    def delete(self, request, pk, format=None):                 # удаление м-м, передаем id заказа
+        try: 
+            order=Orders.objects.get(user=user, status="зарегистрирован", id=pk) # заказ определенного пользователя
+        except:
+            return Response("нет такого заказа")
+        if not DishesOrders.objects.filter(order=order.id).exists():
+            return Response(f"в заказе нет блюд")
+
+        dishes_orders = get_object_or_404(DishesOrders, id=pk)
+        dishes_orders.delete()
+
+        dishes_orders = DishesOrders.objects.all()
+        serializer = self.serializer_class(dishes_orders, many=True)
+        return Response(serializer.data)
+
+
+
+
+# Dishes
 @swagger_auto_schema(method='post', request_body=OrderSerializer)
 @permission_classes([IsAuthenticated])
 @api_view(['POST'])                                  # добавить блюдо в заказ
@@ -260,62 +303,6 @@ def PostDishToOrder(request, pk):
     return Response(serializer.data)
 
 #Orders
-
-@permission_classes([IsManager])
-@api_view(['GET'])                                  # все заказы
-def GetOrders(request):
-    date_format = "%Y-%m-%d"
-    start_date_str = request.query_params.get("start", '2000-01-01')
-    end_date_str = request.query_params.get("end", '3023-12-31')
-    start = datetime.strptime(start_date_str, date_format).date()
-    end = datetime.strptime(end_date_str, date_format).date()
-    status = request.query_params.get("status", '')
-    filters = ~Q(status="отменен") & Q(created_at__range=(start, end))
-    if status != '':
-        filters &= Q(status=status)
-        
-    orders = Orders.objects.filter(filters).order_by('created_at')
-    serializer = OrderSerializer(orders, many=True)
-    
-    return Response(serializer.data)
-
-@permission_classes([IsAuthenticated])
-@api_view(['GET'])                                  # 1 заказ
-def GetOrder(request, pk):
-    try:
-        order = Orders.objects.get(id=pk)
-    except Orders.DoesNotExist:
-        return Response(f"Заказа с таким id нет")
-
-    serializer = FullOrderSerializer(order)
-    return Response(serializer.data)
-
-@swagger_auto_schema(method='delete')
-@permission_classes([IsAuthenticated])
-@api_view(['DELETE'])                               # удалить заказ
-def DeleteOrder(request, pk):
-    if not Orders.objects.filter(id=pk).exists():
-        return Response(f"Заказа с таким id нет")
-    order = Orders.objects.get(id=pk)
-    order.status = "отменен"
-    order.save()
-
-    # order = Orders.objects.all()
-    # serializer = OrderSerializer(order, many=True)
-    return Response({"status": "success"})
-
-# @api_view(['PUT'])                                  # изменить заказ(назначить модератора)
-# def PutOrder(request, pk):
-#     try:
-#         order = Orders.objects.get(id=pk)
-#     except Orders.DoesNotExist:
-#         return Response("Заказа с таким id нет")
-#     order.moderator=request.data["moderator"]
-#     order.save()
-#     order = Orders.objects.all()
-#     serializer = OrderSerializer(order, many=True)
-#     return Response(serializer.data)
-
 @swagger_auto_schema(method='put', request_body=OrderSerializer)
 @permission_classes([IsManager])
 @api_view(['PUT'])                                  # статусы модератора
@@ -358,40 +345,3 @@ def ToOrder(request, pk):
     serializer = OrderSerializer(order)
     return Response(serializer.data)
 
-
-#Dishes-Orders
-@swagger_auto_schema(method='put', request_body=DishOrderSerializer)
-@permission_classes([IsAuthenticated])
-@api_view(['PUT'])                                  # изменение м-м(кол-во)
-def PutDishesOrders(request, pk):                   # передаем id заказа
-    try: 
-        order=Orders.objects.get(user=user, status="зарегистрирован", id=pk) # заказ определенного пользователя
-    except:
-        return Response("нет такого заказа")
-    if not DishesOrders.objects.filter(order=order.id).exists():
-        return Response(f"в заказе нет блюд")
-    dishes_orders = DishesOrders.objects.get(id=pk)
-    dishes_orders.quantity = request.data["quantity"]
-    dishes_orders.save()
-
-    dishes_orders = DishesOrders.objects.all()
-    serializer = DishOrderSerializer(dishes_orders, many=True)
-    return Response(serializer.data)
-
-@swagger_auto_schema(method='delete', request_body=DishOrderSerializer)
-@permission_classes([IsAuthenticated])
-@api_view(['DELETE'])                                # удаление м-м
-def DeleteDishesOrders(request, pk):                 # передаем id заказа
-    try: 
-        order=Orders.objects.get(user=user, status="зарегистрирован", id=pk) # заказ определенного пользователя
-    except:
-        return Response("нет такого заказа")
-    if not DishesOrders.objects.filter(order=order.id).exists():
-        return Response(f"в заказе нет блюд")
-
-    dishes_orders = get_object_or_404(DishesOrders, id=pk)
-    dishes_orders.delete()
-
-    dishes_orders = DishesOrders.objects.all()
-    serializer = DishOrderSerializer(dishes_orders, many=True)
-    return Response(serializer.data)

@@ -6,15 +6,19 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import routers
 
+routerUser = routers.DefaultRouter()
+# routerDishes = routers.DefaultRouter()
 # routerDish = routers.DefaultRouter()
+# routerOrders = routers.DefaultRouter()
 # routerOrder = routers.DefaultRouter()
-# router3 = routers.DefaultRouter()
+# routerDishesOrders = routers.DefaultRouter()
 
-router = routers.DefaultRouter()
-router.register(r'user', views.UserViewSet, basename='user')
-# routerDish.register(r'dishes', views.DishViewSet)
-# routerOrder.register(r'orders', views.OrderViewSet)
-# router3.register(r'dishes_orders', views.DishesOrdersViewSet)
+routerUser.register(r'user', views.UserViewSet, basename='user')
+# routerDishes.register(r'dishes', views.DishesViewSet, basename='dishes')
+# routerDish.register(r'dishes/<int:pk>', views.DishViewSet, basename='dish')
+# routerOrders.register(r'orders', views.OrdersViewSet, basename='orders')
+# routerOrder.register(r'orders/<int:pk>', views.OrderViewSet, basename='order')
+# routerDishesOrders.register(r'dishes_orders/<int:pk>', views.DishesOrdersViewSet, basename='dishes_orders')
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -30,38 +34,27 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    # path('', include(routerDish.urls)),
-    # path('', include(routerOrder.urls)),
-    # path('', include(router3.urls)),
-
-    path('admin/', admin.site.urls),
-
     #Dish
-    path('dishes/', views.GetDishes, name = 'dishes'),
-    path('dishes/post', views.PostDishes, name = 'dishes_post'),
-    path('dishes/<int:pk>/', views.GetDish, name = 'dish'),
-    path('dishes/<int:pk>/delete', views.DeleteDish, name = 'dish_delete'),
-    path('dishes/<int:pk>/put', views.PutDish, name = 'dish_put'),
+    path(r'dishes/', views.DishesViewSet.as_view(), name='dishes'),
+    path(r'dishes/<int:pk>', views.DishViewSet.as_view(), name='dish'),
     path('dishes/<int:pk>/post', views.PostDishToOrder, name = 'dish_add'),
 
     #Order
-    path('orders/', views.GetOrders, name = 'orders'),
-    # path('orders/post', views.PostOrders, name = 'orders_post'),
-    path('orders/<int:pk>/', views.GetOrder, name = 'order'),
-    path('orders/<int:pk>/delete', views.DeleteOrder, name = 'order_delete'),
-    # path('orders/<int:pk>/put', views.PutOrder, name = 'order_put'),
-
+    path(r'orders/', views.OrdersViewSet.as_view(), name='orders'),
+    path(r'orders/<int:pk>', views.OrderViewSet.as_view(), name='order'),
     path('orders/<int:pk>/confirm', views.ConfirmOrder, name = 'order_confirm'),
     path('orders/<int:pk>/accept', views.ToOrder, name = 'order_accept'),
 
     #Dishes-Orders
-    path('dishes_orders/<int:pk>/put', views.PutDishesOrders, name = 'dishes_orders_put'),
-    path('dishes_orders/<int:pk>/delete', views.DeleteDishesOrders, name = 'dishes_orders_delete'),
-
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path(r'dishes_orders/<int:pk>', views.DishesOrdersViewSet.as_view(), name='dishes_orders'),
 
     # Login
+    path('', include(routerUser.urls)),
+    path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('login',  views.login_view, name='login'),
     path('logout', views.logout_view, name='logout'),
+    
+    # Swagger
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]
