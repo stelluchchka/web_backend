@@ -12,6 +12,7 @@ from django.http import HttpResponse
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import *
 from rest_framework.status import *
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -23,6 +24,9 @@ moderator = Users(id=2, name="mod", email="b", password=12345, role="moderator",
 
 @permission_classes([AllowAny])
 @authentication_classes([])
+@csrf_exempt
+@swagger_auto_schema(method='post', request_body=UserSerializer)
+@api_view(['Post'])
 def login_view(request):
     email = request.POST["email"] # передали email и password
     password = request.POST["password"]
@@ -79,7 +83,7 @@ class DishesViewSet(APIView):
     model_class = Dishes
     serializer_class = DishSerializer
 
-    def get(self, request, format=None):
+    def get(self, request, format=None):                                    # все блюда
         min_price = request.query_params.get("min_price", '0')
         max_price = request.query_params.get("max_price", '10000000')
         tag = request.query_params.get("tag", '')
@@ -108,7 +112,9 @@ class DishesViewSet(APIView):
                 'dishes': dish_serializer.data
         })
 
-    def post(self, request, format=None):
+    @permission_classes([IsAdmin])
+    @swagger_auto_schema(request_body=DishSerializer)
+    def post(self, request, format=None):                                   # добавить блюдо
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors)
@@ -134,7 +140,7 @@ class DishViewSet(APIView):
     model_class = Dishes
     serializer_class = DishSerializer
 
-    def  get(self, request, pk, format=None):                                 # 1 блюдо
+    def get(self, request, pk, format=None):                                 # 1 блюдо
         if not Dishes.objects.filter(id=pk, status="есть").exists():
             return Response(f"Такого блюда нет")
 
@@ -142,6 +148,8 @@ class DishViewSet(APIView):
         serializer = self.serializer_class(dish)
         return Response(serializer.data)
 
+    @permission_classes([IsAdmin])
+    @swagger_auto_schema()
     def  delete(self, request, pk, format=None):                              # удалить блюдо
         if not Dishes.objects.filter(id=pk, status="есть").exists():
             return Response(f"Такого блюда нет")
@@ -152,6 +160,8 @@ class DishViewSet(APIView):
         # serializer = self.serializer_class(dish, many=True)
         return Response({"message": "success"})
 
+    @permission_classes([IsAdmin])
+    @swagger_auto_schema(request_body=DishSerializer)
     def  put(self, request, pk, format=None):                                 # изменить блюдо
         try:
             dish = Dishes.objects.get(id=pk, status="есть")
@@ -206,8 +216,9 @@ class OrdersViewSet(APIView):
 class OrderViewSet(APIView):
     model_class = Orders
     serializer_class = FullOrderSerializer
+    permission_classes = [IsAuthenticated]
 
-    def  get(self, request, pk, format=None):                      # 1 заказ
+    def get(self, request, pk, format=None):                                # 1 заказ
         try:
             order = Orders.objects.get(id=pk)
         except Orders.DoesNotExist:
@@ -216,7 +227,8 @@ class OrderViewSet(APIView):
         serializer = self.serializer_class(order)
         return Response(serializer.data)
     
-    def delete(self, request, pk, format=None):                      # удалить заказ
+    @swagger_auto_schema(request_body=OrderSerializer)
+    def delete(self, request, pk, format=None):                             # удалить заказ
         if not Orders.objects.filter(id=pk).exists():
             return Response(f"Заказа с таким id нет")
         order = Orders.objects.get(id=pk)
@@ -231,7 +243,9 @@ class DishesOrdersViewSet(APIView):
     model_class = DishesOrders
     serializer_class = DishOrderSerializer
 
-    def put(self, request, pk, format=None):                   # изменение м-м(кол-во), передаем id заказа
+    @permission_classes([IsAuthenticated])
+    @swagger_auto_schema(request_body=DishOrderSerializer)
+    def put(self, request, pk, format=None):                               # изменение м-м(кол-во), передаем id заказа
         try: 
             order=Orders.objects.get(user=user, status="зарегистрирован", id=pk) # заказ определенного пользователя
         except:
@@ -246,7 +260,9 @@ class DishesOrdersViewSet(APIView):
         serializer = self.serializer_class(dishes_orders, many=True)
         return Response(serializer.data)
 
-    def delete(self, request, pk, format=None):                 # удаление м-м, передаем id заказа
+    @permission_classes([IsAuthenticated])
+    @swagger_auto_schema(request_body=DishOrderSerializer)
+    def delete(self, request, pk, format=None):                              # удаление м-м, передаем id заказа
         try: 
             order=Orders.objects.get(user=user, status="зарегистрирован", id=pk) # заказ определенного пользователя
         except:
@@ -344,4 +360,3 @@ def ToOrder(request, pk):
 
     serializer = OrderSerializer(order)
     return Response(serializer.data)
-
