@@ -79,14 +79,13 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(blank=True, max_length=255, null=True)),
                 ('email', models.CharField(blank=True, max_length=255, null=True)),
                 ('password', models.CharField(blank=True, max_length=255, null=True)),
-                ('role', models.CharField(blank=True, max_length=255, null=True)),
+                ('is_superuser', models.BooleanField(default=False, max_length=150, verbose_name='Является ли пользователь админом?')),
+                ('username', models.CharField(max_length=150, unique=True)),
+                ('is_staff', models.BooleanField(default=False, max_length=150, verbose_name='Является ли пользователь менеджером?')),
             ],
             options={
                 'db_table': 'users',
                 'managed': False,
             },
-        ),
-        migrations.DeleteModel(
-            name='Stock',
         ),
     ]

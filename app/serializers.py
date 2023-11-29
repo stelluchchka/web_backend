@@ -1,6 +1,5 @@
 from app.models import *
 from rest_framework import serializers
-# from app.models import CustomUser
 
 class DishSerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,6 +57,17 @@ class FullOrderSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     is_staff = serializers.BooleanField(default=False, required=False)
     is_superuser = serializers.BooleanField(default=False, required=False)
+    password = serializers.CharField(write_only=True)
+
+    # def create(self, validated_data):
+    #     password = validated_data.pop('password')
+    #     user = super(UserSerializer, self).create(validated_data)
+    #     user.set_password(password) 
+    #     user.save()
+    #     return user
+    def create(self, validated_data):
+        return AuthUser.objects.create_user(**validated_data)
+    
     class Meta:
         model = AuthUser
         fields = "__all__"

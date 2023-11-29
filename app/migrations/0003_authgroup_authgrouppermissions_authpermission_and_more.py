@@ -50,7 +50,7 @@ class Migration(migrations.Migration):
                 ('password', models.EmailField(max_length=128, unique=True, verbose_name='email адрес')),
                 ('last_login', models.DateTimeField(blank=True, null=True)),
                 ('is_superuser', models.BooleanField(default=False, max_length=150, verbose_name='Является ли пользователь админом?')),
-                ('username', models.CharField(max_length=150, unique=True)),
+                ('username', models.CharField(max_length=150, null=True)),
                 ('first_name', models.CharField(max_length=150)),
                 ('last_name', models.CharField(max_length=150)),
                 ('email', models.CharField(max_length=254)),

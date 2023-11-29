@@ -1,5 +1,39 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager, Group, Permission
+
+class NewUserManager(UserManager):
+    def create_user(self,email,password=None, **extra_fields):
+        if not email:
+            raise ValueError('User must have an email address')
+        
+        email = self.normalize_email(email) 
+        user = self.model(email=email, **extra_fields) 
+        user.set_password(password)
+        user.save(using=self.db)
+        return user
+
+class AuthUser(AbstractBaseUser):                       # user
+    password = models.CharField(max_length=256, null=False)
+    last_login = models.DateTimeField(null=True, auto_now=True)   #?
+    is_superuser = models.BooleanField(default=False, verbose_name="Является ли пользователь админом?")
+    first_name = models.CharField(max_length=150, null=True)
+    last_name = models.CharField(max_length=150, null=True)
+    email = models.EmailField(("email адрес"), max_length=128, unique=True, null=False)
+    username = models.CharField(max_length=150, null=True)
+    is_staff = models.BooleanField(default=False, verbose_name="Является ли пользователь модератором?")
+    is_active = models.BooleanField(null=True, default=True)
+    date_joined = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.email}'
+
+    class Meta:
+        managed = False
+        db_table = 'auth_user'
+    
+    USERNAME_FIELD = 'email'
+
+    objects =  NewUserManager()
 
 class Dishes(models.Model):
     STATUS_CHOICES = [
@@ -46,19 +80,6 @@ class DjangoMigrations(models.Model):
         db_table = 'django_migrations'
 
 
-class Users(models.Model):
-    name = models.CharField(max_length=255, blank=True, null=True)
-    email = models.CharField(max_length=255, blank=True, null=True)
-    password = models.CharField(max_length=255, blank=True, null=True)
-    role = models.CharField(max_length=255, blank=True, null=True)
-    login = models.CharField(max_length=255)
-    def __str__(self):
-        return f'{self.name}'
-    class Meta:
-        managed = False
-        db_table = 'users'
-
-
 class Orders(models.Model):
     STATUS_CHOICES = [
         ('зарегистрирован', 'registered'),
@@ -71,8 +92,8 @@ class Orders(models.Model):
     created_at = models.DateTimeField(blank=True, null=True)
     processed_at = models.DateTimeField(blank=True, null=True)
     completed_at = models.DateTimeField(blank=True, null=True)
-    user = models.ForeignKey('Users', on_delete=models.DO_NOTHING, null=False, blank=False)
-    moderator = models.ForeignKey('Users', models.DO_NOTHING, related_name='orders_moderator_set', blank=True, null=True)
+    user = models.ForeignKey('AuthUser', on_delete=models.DO_NOTHING, null=False, blank=False)
+    moderator = models.ForeignKey('AuthUser', models.DO_NOTHING, related_name='orders_moderator_set', blank=True, null=True)
     def __str__(self):
         return f'{self.status}'
     class Meta:
@@ -91,16 +112,6 @@ class DjangoSession(models.Model):
         managed = False
         db_table = 'django_session'
 
-class DjangoMigrations(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    app = models.CharField(max_length=255)
-    name = models.CharField(max_length=255)
-    applied = models.DateTimeField()
-
-    class Meta:
-        managed = False
-        db_table = 'django_migrations'
-
 class DjangoContentType(models.Model):
     app_label = models.CharField(max_length=100)
     model = models.CharField(max_length=100)
@@ -111,24 +122,7 @@ class DjangoContentType(models.Model):
         unique_together = (('app_label', 'model'),)
 
 
-class AuthUser(models.Model):                       # user
-    password = models.EmailField(("email адрес"), unique=True, max_length=128)
-    last_login = models.DateTimeField(blank=True, null=True)
-    is_superuser = models.BooleanField(default=False, max_length=150, verbose_name="Является ли пользователь админом?")
-    username = models.CharField(unique=True, max_length=150)
-    first_name = models.CharField(max_length=150)
-    last_name = models.CharField(max_length=150)
-    email = models.CharField(max_length=254)
-    is_staff = models.BooleanField(default=False, max_length=150, verbose_name="Является ли пользователь менеджером?")
-    is_active = models.BooleanField()
-    date_joined = models.DateTimeField()
 
-    def __str__(self):
-        return f'{self.first_name} {self.last_name}'
-
-    class Meta:
-        managed = False
-        db_table = 'auth_user'
 
 class AuthGroup(models.Model):
     name = models.CharField(unique=True, max_length=150)

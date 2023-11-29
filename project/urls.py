@@ -8,17 +8,11 @@ from rest_framework import routers
 
 routerUser = routers.DefaultRouter()
 # routerDishes = routers.DefaultRouter()
-# routerDish = routers.DefaultRouter()
-# routerOrders = routers.DefaultRouter()
-# routerOrder = routers.DefaultRouter()
-# routerDishesOrders = routers.DefaultRouter()
+
 
 routerUser.register(r'user', views.UserViewSet, basename='user')
 # routerDishes.register(r'dishes', views.DishesViewSet, basename='dishes')
-# routerDish.register(r'dishes/<int:pk>', views.DishViewSet, basename='dish')
-# routerOrders.register(r'orders', views.OrdersViewSet, basename='orders')
-# routerOrder.register(r'orders/<int:pk>', views.OrderViewSet, basename='order')
-# routerDishesOrders.register(r'dishes_orders/<int:pk>', views.DishesOrdersViewSet, basename='dishes_orders')
+
 
 schema_view = get_schema_view(
    openapi.Info(

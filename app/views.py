@@ -9,7 +9,9 @@ from django.db.models import Q
 from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import *
 from django.http import HttpResponse
+from django.conf import settings
 
+import redis
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from django.views.decorators.csrf import csrf_exempt
@@ -19,31 +21,72 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.views import APIView
 
-user = Users(id=1, name="User", email="a", password=1234, role="user", login="aa")
-moderator = Users(id=2, name="mod", email="b", password=12345, role="moderator", login="bb")
+import uuid
+
+session_storage = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
+
+# user = AuthUser(id=1, first_name="User", email="aa@mail.ru", password=1234)
+# moderator = AuthUser(id=2, first_name="mod", email="ba@mail.ru", password=12345)
+
+# user = AuthUser(id=1, first_name="User", email="aaaaaa@mail.ru", password=1234)
+# moderator = AuthUser(id=4, email="moderator@e.ru", password=000, is_staff = True)
 
 @permission_classes([AllowAny])
-@authentication_classes([])
 @csrf_exempt
 @swagger_auto_schema(method='post', request_body=UserSerializer)
 @api_view(['Post'])
 def login_view(request):
-    email = request.POST["email"] # передали email и password
-    password = request.POST["password"]
+    email = request.data.get("email")
+    password = request.data.get("password")
     user = authenticate(request, email=email, password=password)
+    print('user is', user)
     if user is not None:
-        login(request, user)
-        return HttpResponse("{'status': 'ok'}")
+        random_key = str(uuid.uuid4())
+        session_storage.set(random_key, email)
+        user_data = {
+            "id": user.id,
+            "email": user.email,
+            # "full_name": user.full_name,
+            "password": user.password,
+            "is_superuser": user.is_superuser,
+        }
+        # login(request, user)
+        response = Response(user_data, status=status.HTTP_201_CREATED)
+        response.set_cookie("session_id", random_key, samesite="Lax")
+        return response
     else:
         return HttpResponse("{'status': 'error', 'error': 'login failed'}")
 
 @permission_classes([AllowAny])
 @authentication_classes([])
 def logout_view(request):
-    logout(request._request)
-    return Response({'status': 'Success'})
+    ssid = request.COOKIES["session_id"]
+    if session_storage.exists(ssid):
+        session_storage.delete(ssid)
+        response_data = {'status': 'Success'}
+    else:
+        response_data = {'status': 'Error', 'message': 'Session does not exist'}
+    return Response(response_data)
 
-
+@api_view(['GET'])
+# @permission_classes([IsAuth])
+def user_info(request):
+    try:
+        ssid = request.COOKIES["session_id"]
+        if session_storage.exists(ssid):
+            email = session_storage.get(ssid).decode('utf-8')
+            user = AuthUser.objects.get(email=email)
+            user_data = {
+                "user_id": user.id,
+                "email": user.email,
+                # "first_name": user.first_name,
+                "is_superuser": user.is_superuser
+            }
+            return Response(user_data, status=status.HTTP_200_OK)
+        else:
+            return Response({'status': 'Error', 'message': 'Session does not exist'})
+    except:
+        return Response({'status': 'Error', 'message': 'Cookies are not transmitted'})
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -51,23 +94,6 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = AuthUser.objects.all()
     serializer_class = UserSerializer
     model_class = AuthUser
-
-    def create(self, request):
-        # Если пользователя c указанным в request email ещё нет, в БД будет добавлен новый пользователь.
-        if self.model_class.objects.filter(email=request.data['email']).exists():
-            return Response({'status': 'Exist'}, status=400)
-        serializer = self.serializer_class(data=request.data) #?
-        if serializer.is_valid():
-            print(serializer.data)
-            self.model_class.objects.create_user(first_name=serializer.data['first_name'],
-                                     username=serializer.data['username'],             
-                                     last_name=serializer.data['last_name'],            
-                                     email=serializer.data['email'],
-                                     password=serializer.data['password'],
-                                     is_superuser=serializer.data['is_superuser'],
-                                     is_staff=serializer.data['is_staff'])
-            return Response({'status': 'Success'}, status=200)
-        return Response({'status': 'Error', 'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def get_permissions(self):
         if self.action in ['create']:
@@ -82,7 +108,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class DishesViewSet(APIView):
     model_class = Dishes
     serializer_class = DishSerializer
-
+    @permission_classes([])
     def get(self, request, format=None):                                    # все блюда
         min_price = request.query_params.get("min_price", '0')
         max_price = request.query_params.get("max_price", '10000000')
@@ -99,7 +125,10 @@ class DishesViewSet(APIView):
         dish_serializer = self.serializer_class(dish, many=True)
         # заказ определенного пользователя
         try: 
-            order=Orders.objects.filter(user=user, status="зарегистрирован").latest('created_at')
+            ssid = request.COOKIES["session_id"]
+            email = session_storage.get(ssid).decode('utf-8')
+            cur_user = AuthUser.objects.get(email=email)
+            order=Orders.objects.filter(user=cur_user, status="зарегистрирован").latest('created_at')
             order_serializer = OrderSerializer(order)
             return Response({
                 'order': order_serializer.data,
@@ -197,6 +226,12 @@ class OrdersViewSet(APIView):
 
     @permission_classes([IsManager])
     def get(self, request, format=None):                                  # все заказы
+        ssid = request.COOKIES["session_id"]
+        try:
+            email = session_storage.get(ssid).decode('utf-8')
+            cur_user = AuthUser.objects.get(email=email)
+        except:
+            return Response('Сессия не найдена')
         date_format = "%Y-%m-%d"
         start_date_str = request.query_params.get("start", '2000-01-01')
         end_date_str = request.query_params.get("end", '3023-12-31')
@@ -207,8 +242,15 @@ class OrdersViewSet(APIView):
         if status != '':
             filters &= Q(status=status)
             
-        orders = Orders.objects.filter(filters).order_by('created_at')
-        serializer = self.serializer_class(orders, many=True)
+        if bool(cur_user.is_staff or cur_user.is_superuser):
+            orders = Orders.objects.filter(filters).order_by('created_at')
+            serializer = self.serializer_class(orders, many=True)
+        else:
+            try:
+                order = Orders.objects.get(user=cur_user)
+                serializer = self.serializer_class(order)
+            except:
+                return Response('Заказов нет')
         
         return Response(serializer.data)
 
@@ -245,35 +287,36 @@ class DishesOrdersViewSet(APIView):
 
     @permission_classes([IsAuthenticated])
     @swagger_auto_schema(request_body=DishOrderSerializer)
-    def put(self, request, pk, format=None):                               # изменение м-м(кол-во), передаем id заказа
-        try: 
-            order=Orders.objects.get(user=user, status="зарегистрирован", id=pk) # заказ определенного пользователя
+    def put(self, request, pk, format=None):                               # изменение м-м(кол-во), передаем id блюда
+        try:
+            ssid = request.COOKIES["session_id"]
+            email = session_storage.get(ssid).decode('utf-8')
+            cur_user = AuthUser.objects.get(email=email)
+            order=Orders.objects.get(user=cur_user, status="зарегистрирован") # заказ определенного пользователя
         except:
             return Response("нет такого заказа")
-        if not DishesOrders.objects.filter(order=order.id).exists():
-            return Response(f"в заказе нет блюд")
-        dishes_orders = DishesOrders.objects.get(id=pk)
+        dishes_orders = DishesOrders.objects.get(dish_id=pk, order_id=order.id)
         dishes_orders.quantity = request.data["quantity"]
         dishes_orders.save()
 
-        dishes_orders = DishesOrders.objects.all()
+        dishes_orders = DishesOrders.objects.filter(order_id=order.id)
         serializer = self.serializer_class(dishes_orders, many=True)
         return Response(serializer.data)
 
     @permission_classes([IsAuthenticated])
     @swagger_auto_schema(request_body=DishOrderSerializer)
-    def delete(self, request, pk, format=None):                              # удаление м-м, передаем id заказа
+    def delete(self, request, pk, format=None):                              # удаление м-м, передаем id блюда
         try: 
-            order=Orders.objects.get(user=user, status="зарегистрирован", id=pk) # заказ определенного пользователя
+            ssid = request.COOKIES["session_id"]
+            email = session_storage.get(ssid).decode('utf-8')
+            cur_user = AuthUser.objects.get(email=email)
+            order=Orders.objects.get(user=cur_user, status="зарегистрирован") # заказ определенного пользователя
         except:
             return Response("нет такого заказа")
-        if not DishesOrders.objects.filter(order=order.id).exists():
-            return Response(f"в заказе нет блюд")
-
-        dishes_orders = get_object_or_404(DishesOrders, id=pk)
+        dishes_orders = get_object_or_404(DishesOrders, dish_id=pk, order_id=order.id)
         dishes_orders.delete()
 
-        dishes_orders = DishesOrders.objects.all()
+        dishes_orders = DishesOrders.objects.filter(order_id=order.id)
         serializer = self.serializer_class(dishes_orders, many=True)
         return Response(serializer.data)
 
@@ -285,13 +328,19 @@ class DishesOrdersViewSet(APIView):
 @permission_classes([IsAuthenticated])
 @api_view(['POST'])                                  # добавить блюдо в заказ
 def PostDishToOrder(request, pk):
+    ssid = request.COOKIES["session_id"]
+    try:
+        email = session_storage.get(ssid).decode('utf-8')
+        cur_user = AuthUser.objects.get(email=email)
+    except:
+        return Response('Сессия не найдена')
     try: 
-        order=Orders.objects.filter(user=user, status="зарегистрирован").latest('created_at') # заказ определенного пользователя
+        order=Orders.objects.filter(user=cur_user, status="зарегистрирован").latest('created_at') # заказ определенного пользователя
     except:
         order = Orders(                              # если нет, создаем новый заказ
             status='зарегистрирован',
             created_at=datetime.now(),
-            user=user,
+            user=cur_user,
         )
         order.save()
 
@@ -327,6 +376,11 @@ def ConfirmOrder(request, pk):
         return Response(f"Заказа с таким id нет")
 
     order = Orders.objects.get(id=pk)
+    ssid = request.COOKIES["session_id"]
+    email = session_storage.get(ssid).decode('utf-8')
+    cur_user = AuthUser.objects.get(email=email)
+    moderator=cur_user
+    order.moderator=moderator                   # назначаем модератора
 
     if order.status != "сформирован":
         return Response("Такой заказ не сформирован")
@@ -355,7 +409,6 @@ def ToOrder(request, pk):
 
     order.status = request.data["status"]
     order.processed_at=datetime.now()           #.strftime("%d.%m.%Y %H:%M:%S")
-    order.moderator=moderator                   # назначаем модератора
     order.save()
 
     serializer = OrderSerializer(order)
