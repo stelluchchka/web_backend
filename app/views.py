@@ -1,6 +1,6 @@
 from app.serializers import *
 from app.models import *
-from app.permissions import IsManager, IsAdmin
+from app.permissions import IsManagerOrReadOnly, IsAuth
 from app.minio import add_pic
 
 from datetime import datetime
@@ -31,7 +31,6 @@ session_storage = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDI
 # user = AuthUser(id=1, first_name="User", email="aaaaaa@mail.ru", password=1234)
 # moderator = AuthUser(id=4, email="moderator@e.ru", password=000, is_staff = True)
 
-@permission_classes([AllowAny])
 @csrf_exempt
 @swagger_auto_schema(method='post', request_body=UserSerializer)
 @api_view(['Post'])
@@ -39,7 +38,6 @@ def login_view(request):
     email = request.data.get("email")
     password = request.data.get("password")
     user = authenticate(request, email=email, password=password)
-    print('user is', user)
     if user is not None:
         random_key = str(uuid.uuid4())
         session_storage.set(random_key, email)
@@ -57,7 +55,6 @@ def login_view(request):
     else:
         return HttpResponse("{'status': 'error', 'error': 'login failed'}")
 
-@permission_classes([AllowAny])
 @authentication_classes([])
 def logout_view(request):
     ssid = request.COOKIES["session_id"]
@@ -69,7 +66,7 @@ def logout_view(request):
     return Response(response_data)
 
 @api_view(['GET'])
-# @permission_classes([IsAuth])
+@permission_classes([IsAuth])
 def user_info(request):
     try:
         ssid = request.COOKIES["session_id"]
@@ -95,20 +92,11 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     model_class = AuthUser
 
-    def get_permissions(self):
-        if self.action in ['create']:
-            permission_classes = [AllowAny]
-        elif self.action in ['list']:
-            permission_classes = [IsAdmin | IsManager]
-        else:
-            permission_classes = [IsAdmin]
-        return [permission() for permission in permission_classes]
-
-
 class DishesViewSet(APIView):
     model_class = Dishes
     serializer_class = DishSerializer
-    @permission_classes([])
+    permission_classes=[IsManagerOrReadOnly]
+
     def get(self, request, format=None):                                    # все блюда
         min_price = request.query_params.get("min_price", '0')
         max_price = request.query_params.get("max_price", '10000000')
@@ -126,8 +114,11 @@ class DishesViewSet(APIView):
         # заказ определенного пользователя
         try: 
             ssid = request.COOKIES["session_id"]
-            email = session_storage.get(ssid).decode('utf-8')
-            cur_user = AuthUser.objects.get(email=email)
+            try:
+                email = session_storage.get(ssid).decode('utf-8')
+                cur_user = AuthUser.objects.get(email=email)
+            except:
+                return Response('Сессия не найдена')
             order=Orders.objects.filter(user=cur_user, status="зарегистрирован").latest('created_at')
             order_serializer = OrderSerializer(order)
             return Response({
@@ -136,12 +127,16 @@ class DishesViewSet(APIView):
         })
         # заказа-черновика нет
         except:
-            return Response({
-                'order': [],
-                'dishes': dish_serializer.data
+            if bool(cur_user.is_staff or cur_user.is_superuser):     # (у работников нет заказов)
+                return Response({
+                    'dishes': dish_serializer.data
+                })
+            else:
+                return Response({
+                    'order': [],
+                    'dishes': dish_serializer.data
         })
 
-    @permission_classes([IsAdmin])
     @swagger_auto_schema(request_body=DishSerializer)
     def post(self, request, format=None):                                   # добавить блюдо
         serializer = self.serializer_class(data=request.data)
@@ -168,6 +163,7 @@ class DishesViewSet(APIView):
 class DishViewSet(APIView):
     model_class = Dishes
     serializer_class = DishSerializer
+    permission_classes=[IsManagerOrReadOnly]
 
     def get(self, request, pk, format=None):                                 # 1 блюдо
         if not Dishes.objects.filter(id=pk, status="есть").exists():
@@ -177,7 +173,6 @@ class DishViewSet(APIView):
         serializer = self.serializer_class(dish)
         return Response(serializer.data)
 
-    @permission_classes([IsAdmin])
     @swagger_auto_schema()
     def  delete(self, request, pk, format=None):                              # удалить блюдо
         if not Dishes.objects.filter(id=pk, status="есть").exists():
@@ -189,7 +184,6 @@ class DishViewSet(APIView):
         # serializer = self.serializer_class(dish, many=True)
         return Response({"message": "success"})
 
-    @permission_classes([IsAdmin])
     @swagger_auto_schema(request_body=DishSerializer)
     def  put(self, request, pk, format=None):                                 # изменить блюдо
         try:
@@ -223,8 +217,8 @@ class DishViewSet(APIView):
 class OrdersViewSet(APIView):
     model_class = Orders
     serializer_class = OrderSerializer
+    permission_classes=[IsManagerOrReadOnly]
 
-    @permission_classes([IsManager])
     def get(self, request, format=None):                                  # все заказы
         ssid = request.COOKIES["session_id"]
         try:
@@ -258,7 +252,7 @@ class OrdersViewSet(APIView):
 class OrderViewSet(APIView):
     model_class = Orders
     serializer_class = FullOrderSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsManagerOrReadOnly]
 
     def get(self, request, pk, format=None):                                # 1 заказ
         try:
@@ -284,8 +278,8 @@ class OrderViewSet(APIView):
 class DishesOrdersViewSet(APIView):
     model_class = DishesOrders
     serializer_class = DishOrderSerializer
+    permission_classes = [IsManagerOrReadOnly]
 
-    @permission_classes([IsAuthenticated])
     @swagger_auto_schema(request_body=DishOrderSerializer)
     def put(self, request, pk, format=None):                               # изменение м-м(кол-во), передаем id блюда
         try:
@@ -303,7 +297,6 @@ class DishesOrdersViewSet(APIView):
         serializer = self.serializer_class(dishes_orders, many=True)
         return Response(serializer.data)
 
-    @permission_classes([IsAuthenticated])
     @swagger_auto_schema(request_body=DishOrderSerializer)
     def delete(self, request, pk, format=None):                              # удаление м-м, передаем id блюда
         try: 
@@ -325,7 +318,7 @@ class DishesOrdersViewSet(APIView):
 
 # Dishes
 @swagger_auto_schema(method='post', request_body=OrderSerializer)
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuth])
 @api_view(['POST'])                                  # добавить блюдо в заказ
 def PostDishToOrder(request, pk):
     ssid = request.COOKIES["session_id"]
@@ -369,8 +362,8 @@ def PostDishToOrder(request, pk):
 
 #Orders
 @swagger_auto_schema(method='put', request_body=OrderSerializer)
-@permission_classes([IsManager])
 @api_view(['PUT'])                                  # статусы модератора
+@permission_classes([IsManagerOrReadOnly])
 def ConfirmOrder(request, pk):
     if not Orders.objects.filter(id=pk).exists():
         return Response(f"Заказа с таким id нет")
@@ -379,23 +372,26 @@ def ConfirmOrder(request, pk):
     ssid = request.COOKIES["session_id"]
     email = session_storage.get(ssid).decode('utf-8')
     cur_user = AuthUser.objects.get(email=email)
-    moderator=cur_user
-    order.moderator=moderator                   # назначаем модератора
 
-    if order.status != "сформирован":
-        return Response("Такой заказ не сформирован")
-    if request.data["status"] not in ["отказ", "готов"]:
-        return Response("Ошибка")
-    order.status = request.data["status"]
-    order.completed_at=datetime.now()
-    order.save()
+    if bool(cur_user.is_staff == False and cur_user.is_superuser == False):
+        return Response("Нет прав", status=status.HTTP_403_FORBIDDEN)
+    else:
+        order.moderator=cur_user                  # назначаем модератора
 
-    serializer = OrderSerializer(order)
-    return Response(serializer.data)
+        if order.status != "сформирован":
+            return Response("Такой заказ не сформирован", status=status.HTTP_400_BAD_REQUEST)
+        if request.data["status"] not in ["отказ", "готов"]:
+            return Response("Ошибка", status=status.HTTP_400_BAD_REQUEST)
+        order.status = request.data["status"]
+        order.completed_at=datetime.now()
+        order.save()
+
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
 
 @swagger_auto_schema(method='put', request_body=OrderSerializer)
-@permission_classes([IsAuthenticated])
 @api_view(['PUT'])                                  # статусы пользователя
+@permission_classes([IsAuth])
 def ToOrder(request, pk):
     if not Orders.objects.filter(id=pk).exists():
         return Response(f"Заказа с таким id нет")
@@ -403,9 +399,9 @@ def ToOrder(request, pk):
     order = Orders.objects.get(id=pk)
 
     if order.status != "зарегистрирован":
-        return Response(serializer.errors)
+        return Response("Такой заказ не зарегистрован", status=status.HTTP_400_BAD_REQUEST)
     if request.data["status"] not in ["отменен", "сформирован"]:
-        return Response(serializer.errors)
+        return Response("Ошибка", status=status.HTTP_400_BAD_REQUEST)
 
     order.status = request.data["status"]
     order.processed_at=datetime.now()           #.strftime("%d.%m.%Y %H:%M:%S")
