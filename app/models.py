@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager, Group, Permission
+from django.contrib.auth.models import AbstractBaseUser, UserManager
 
 class NewUserManager(UserManager):
     def create_user(self,email,password=None, **extra_fields):
@@ -14,7 +14,7 @@ class NewUserManager(UserManager):
 
 class AuthUser(AbstractBaseUser):                       # user
     password = models.CharField(max_length=256, null=False)
-    last_login = models.DateTimeField(null=True, auto_now=True)   #?
+    last_login = models.DateTimeField(null=True, auto_now=True)   #?s
     is_superuser = models.BooleanField(default=False, verbose_name="Является ли пользователь админом?")
     first_name = models.CharField(max_length=150, null=True)
     last_name = models.CharField(max_length=150, null=True)
