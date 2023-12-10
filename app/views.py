@@ -60,11 +60,11 @@ def add_pic(new_dish, pic, chef):
 def GetDishes(request):
     min_price = request.query_params.get("min_price", '0')
     max_price = request.query_params.get("max_price", '10000000')
-    tag = request.query_params.get("tag", '')
+    tag = request.query_params.get("tag", "тег")
     title = request.query_params.get("title", '')
 
     filters = Q(status="есть") & Q(price__range=(min_price, max_price))
-    if tag != '':
+    if tag != "тег":
         filters &= Q(tags=tag)
     if title != '':
         filters &= Q(title=title)
