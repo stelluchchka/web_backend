@@ -111,32 +111,33 @@ class DishesViewSet(APIView):
 
         dish = Dishes.objects.filter(filters)
         dish_serializer = self.serializer_class(dish, many=True)
-        # заказ определенного пользователя
-        try: 
-            ssid = request.COOKIES["session_id"]
-            try:
-                email = session_storage.get(ssid).decode('utf-8')
-                cur_user = AuthUser.objects.get(email=email)
-            except:
-                return Response('Сессия не найдена')
-            order=Orders.objects.filter(user=cur_user, status="зарегистрирован").latest('created_at')
-            order_serializer = OrderSerializer(order)
-            return Response({
-                'order': order_serializer.data,
-                'dishes': dish_serializer.data
-        })
-        # заказа-черновика нет
-        except:
-            if bool(cur_user.is_staff or cur_user.is_superuser):     # (у работников нет заказов)
-                return Response({
-                    'dishes': dish_serializer.data
-                })
-            else:
-                return Response({
-                    'order': [],
-                    'dishes': dish_serializer.data
-        })
 
+        try:
+            ssid = request.COOKIES["session_id"]
+            email = session_storage.get(ssid).decode('utf-8')
+            cur_user = AuthUser.objects.get(email=email)
+            # заказ определенного пользователя
+            try: 
+                order=Orders.objects.filter(user=cur_user, status="зарегистрирован").latest('created_at')
+                order_serializer = OrderSerializer(order)
+                return Response({
+                    'order': order_serializer.data,
+                    'dishes': dish_serializer.data
+            })
+            # заказа-черновика нет
+            except:
+                if bool(cur_user.is_staff or cur_user.is_superuser):     # (у работников нет заказов)
+                    return Response({
+                        'dishes': dish_serializer.data
+                    })
+                else:
+                    return Response({
+                        'order': [],
+                        'dishes': dish_serializer.data
+            })
+        except:
+            return Response('Сессия не найдена')
+        
     @swagger_auto_schema(request_body=DishSerializer)
     def post(self, request, format=None):                                   # добавить блюдо
         serializer = self.serializer_class(data=request.data)
