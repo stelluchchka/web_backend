@@ -44,7 +44,8 @@ def login_view(request):
         user_data = {
             "id": user.id,
             "email": user.email,
-            # "full_name": user.full_name,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
             "password": user.password,
             "is_superuser": user.is_superuser,
         }
@@ -53,7 +54,7 @@ def login_view(request):
         response.set_cookie("session_id", random_key, samesite="Lax")
         return response
     else:
-        return HttpResponse("{'status': 'error', 'error': 'login failed'}")
+        return HttpResponse("error", status=status.HTTP_400_BAD_REQUEST)
 
 @authentication_classes([])
 def logout_view(request):
@@ -63,7 +64,7 @@ def logout_view(request):
         response_data = {'status': 'Success'}
     else:
         response_data = {'status': 'Error', 'message': 'Session does not exist'}
-    return Response(response_data)
+    return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 @permission_classes([IsAuth])
@@ -393,11 +394,19 @@ def ConfirmOrder(request, pk):
 @swagger_auto_schema(method='put', request_body=OrderSerializer)
 @api_view(['PUT'])                                  # статусы пользователя
 @permission_classes([IsAuth])
-def ToOrder(request, pk):
-    if not Orders.objects.filter(id=pk).exists():
-        return Response(f"Заказа с таким id нет")
-
-    order = Orders.objects.get(id=pk)
+def ToOrder(request):
+    try:
+        ssid = request.COOKIES["session_id"]
+        email = session_storage.get(ssid).decode('utf-8')
+        cur_user = AuthUser.objects.get(email=email)
+        # заказ определенного пользователя
+        try: 
+            order=Orders.objects.filter(user=cur_user, status="зарегистрирован").latest('created_at')
+        # заказа-черновика нет
+        except:
+            return Response({'error: no order'}, status=status.HTTP_404_NOT_FOUND)
+    except:
+        return Response('Сессия не найдена')
 
     if order.status != "зарегистрирован":
         return Response("Такой заказ не зарегистрован", status=status.HTTP_400_BAD_REQUEST)

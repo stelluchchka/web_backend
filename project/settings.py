@@ -152,6 +152,7 @@ AUTH_USER_MODEL = 'app.AuthUser'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
+    "http://192.168.1.111:5001"
 ]
 
 REDIS_HOST = '127.0.0.1'

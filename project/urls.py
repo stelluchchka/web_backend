@@ -37,7 +37,7 @@ urlpatterns = [
     path(r'orders/', views.OrdersViewSet.as_view(), name='orders'),
     path(r'orders/<int:pk>', views.OrderViewSet.as_view(), name='order'),
     path('orders/<int:pk>/confirm', views.ConfirmOrder, name = 'order_confirm'),
-    path('orders/<int:pk>/accept', views.ToOrder, name = 'order_accept'),
+    path('orders/accept', views.ToOrder, name = 'order_accept'),
 
     #Dishes-Orders
     path(r'dishes_orders/<int:pk>', views.DishesOrdersViewSet.as_view(), name='dishes_orders'),
@@ -48,7 +48,8 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('login',  views.login_view, name='login'),
     path('logout', views.logout_view, name='logout'),
-    
+    path('user_info', views.user_info, name = 'user_info'),
+
     # Swagger
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]
