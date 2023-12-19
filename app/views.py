@@ -55,16 +55,18 @@ def login_view(request):
         return response
     else:
         return HttpResponse("error", status=status.HTTP_400_BAD_REQUEST)
-
+    
+@csrf_exempt
 @authentication_classes([])
 def logout_view(request):
     ssid = request.COOKIES["session_id"]
     if session_storage.exists(ssid):
         session_storage.delete(ssid)
-        response_data = {'status': 'Success'}
+        response_data = {'Success'}
+        return HttpResponse(response_data, status=status.HTTP_200_OK)
     else:
-        response_data = {'status': 'Error', 'message': 'Session does not exist'}
-    return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        response_data = {'Error: Session does not exist'}
+    return HttpResponse(response_data, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 @permission_classes([IsAuth])
@@ -77,7 +79,8 @@ def user_info(request):
             user_data = {
                 "user_id": user.id,
                 "email": user.email,
-                # "first_name": user.first_name,
+                "first_name": user.first_name,
+                "last_name": user.first_name,
                 "is_superuser": user.is_superuser
             }
             return Response(user_data, status=status.HTTP_200_OK)
@@ -101,11 +104,11 @@ class DishesViewSet(APIView):
     def get(self, request, format=None):                                    # все блюда
         min_price = request.query_params.get("min_price", '0')
         max_price = request.query_params.get("max_price", '10000000')
-        tag = request.query_params.get("tag", '')
+        tag = request.query_params.get("tag", 'тег')
         title = request.query_params.get("title", '')
 
         filters = Q(status="есть") & Q(price__range=(min_price, max_price))
-        if tag != '':
+        if tag != 'тег':
             filters &= Q(tags=tag)
         if title != '':
             filters &= Q(title=title)
@@ -127,17 +130,12 @@ class DishesViewSet(APIView):
             })
             # заказа-черновика нет
             except:
-                if bool(cur_user.is_staff or cur_user.is_superuser):     # (у работников нет заказов)
-                    return Response({
-                        'dishes': dish_serializer.data
-                    })
-                else:
-                    return Response({
-                        'order': [],
-                        'dishes': dish_serializer.data
+                return Response({
+                    'order': [],
+                    'dishes': dish_serializer.data
             })
         except:
-            return Response('Сессия не найдена')
+            return Response({'order': [], 'dishes': dish_serializer.data})
         
     @swagger_auto_schema(request_body=DishSerializer)
     def post(self, request, format=None):                                   # добавить блюдо
@@ -218,7 +216,7 @@ class DishViewSet(APIView):
 
 class OrdersViewSet(APIView):
     model_class = Orders
-    serializer_class = OrderSerializer
+    serializer_class = OrdersSerializer1
     permission_classes=[IsManagerOrReadOnly]
 
     def get(self, request, format=None):                                  # все заказы
@@ -227,24 +225,24 @@ class OrdersViewSet(APIView):
             email = session_storage.get(ssid).decode('utf-8')
             cur_user = AuthUser.objects.get(email=email)
         except:
-            return Response('Сессия не найдена')
+            return HttpResponse("Сессия не найдена", status=status.HTTP_404_NOT_FOUND)
         date_format = "%Y-%m-%d"
         start_date_str = request.query_params.get("start", '2000-01-01')
         end_date_str = request.query_params.get("end", '3023-12-31')
         start = datetime.strptime(start_date_str, date_format).date()
         end = datetime.strptime(end_date_str, date_format).date()
-        status = request.query_params.get("status", '')
-        filters = ~Q(status="отменен") & Q(created_at__range=(start, end))
-        if status != '':
-            filters &= Q(status=status)
+        stats = request.query_params.get("status", '')
+        filters = ~Q(stats="отменен") & Q(created_at__range=(start, end))
+        if stats != '':
+            filters &= Q(stats=stats)
             
         if bool(cur_user.is_staff or cur_user.is_superuser):
-            orders = Orders.objects.filter(filters).order_by('created_at')
+            orders = Orders.objects.filter(filters).order_by('-created_at')
             serializer = self.serializer_class(orders, many=True)
         else:
             try:
-                order = Orders.objects.get(user=cur_user)
-                serializer = self.serializer_class(order)
+                order = Orders.objects.filter(user=cur_user).order_by('-created_at')
+                serializer = self.serializer_class(order, many=True)
             except:
                 return Response('Заказов нет')
         
@@ -253,7 +251,7 @@ class OrdersViewSet(APIView):
 
 class OrderViewSet(APIView):
     model_class = Orders
-    serializer_class = FullOrderSerializer
+    serializer_class = OrdersSerializer1
     permission_classes = [IsManagerOrReadOnly]
 
     def get(self, request, pk, format=None):                                # 1 заказ
@@ -280,7 +278,7 @@ class OrderViewSet(APIView):
 class DishesOrdersViewSet(APIView):
     model_class = DishesOrders
     serializer_class = DishOrderSerializer
-    permission_classes = [IsManagerOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(request_body=DishOrderSerializer)
     def put(self, request, pk, format=None):                               # изменение м-м(кол-во), передаем id блюда
@@ -320,7 +318,7 @@ class DishesOrdersViewSet(APIView):
 
 # Dishes
 @swagger_auto_schema(method='post', request_body=OrderSerializer)
-@permission_classes([IsAuth])
+@permission_classes([IsAuthenticated])
 @api_view(['POST'])                                  # добавить блюдо в заказ
 def PostDishToOrder(request, pk):
     ssid = request.COOKIES["session_id"]
@@ -356,10 +354,10 @@ def PostDishToOrder(request, pk):
         )
         dish_order.save()
 
-    # dishes_orders = DishesOrders.objects.all()  # выводим все м-м
-    # serializer = DishOrderSerializer(dishes_orders, many=True)
-    orders = Orders.objects.get(id=order_id)  # выводим 1 заказ
-    serializer = OrderSerializer(orders)
+    dishes_orders = DishesOrders.objects.get(order_id=order_id, dish_id=dish_id)  # выводим 1 м-м
+    serializer = DishOrderSerializer(dishes_orders)
+    # orders = Orders.objects.get(id=order_id)  # выводим 1 заказ
+    # serializer = OrderSerializer(orders)
     return Response(serializer.data)
 
 #Orders

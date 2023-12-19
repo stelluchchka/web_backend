@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'app',
     'rest_framework',
     'drf_yasg',
+    'corsheaders'
 ]
 
 REST_FRAMEWORK = {
@@ -62,6 +63,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'project.urls'
@@ -149,11 +151,34 @@ AUTH_USER_MODEL = 'app.AuthUser'
 #         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
 #     ]
 # }
-
-CORS_ALLOWED_ORIGINS = [
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
     "http://localhost:8000",
     "http://192.168.1.111:5001"
 ]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://192.168.1.111:5001"
+]
+CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
+CORS_ALLOW_HEADERS = [
+"accept",
+"accept-encoding",
+"authorization",
+"content-type",
+"dnt",
+"origin",
+"user-agent",
+"x-csrftoken",
+"x-requested-with",
+]
+X_FRAME_OPTIONS = "SAMEORIGIN"
+
+CORS_ORIGIN_ALLOW_ALL=True
+CORS_ALLOW_CREDENTIALS=True
+SESSION_COOKIE_SECURE=False
+CORS_ALLOW_ALL_ORIGINS=True
 
 REDIS_HOST = '127.0.0.1'
 REDIS_PORT = 6379

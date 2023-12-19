@@ -12,9 +12,21 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Orders
         fields = "__all__"
 
+class CurDishesSerializer(serializers.ModelSerializer):
+    # id=serializers.CharField(source='dish.id')
+    # title=serializers.CharField(source='dish.title')
+    # price=serializers.DecimalField(max_digits=10, decimal_places=2, source='dish.price')
+    # tags=serializers.CharField(source='dish.tags')
+    # url=serializers.CharField(source='dish.url')
+    class Meta:
+        model = Dishes
+        fields = ['id', 'title', 'price', 'tags', 'url']
+
+
+
 class DishOrderSerializer(serializers.ModelSerializer):
-    dish = serializers.StringRelatedField(read_only=True)
-    order = serializers.StringRelatedField(read_only=True)
+    dish = CurDishesSerializer(read_only=True)
+    order = OrderSerializer(read_only=True)
 
     class Meta:
         model = DishesOrders
@@ -38,18 +50,12 @@ class DishesSerializer(serializers.ModelSerializer):
 #         fields = ['id', 'status', 'created_at', 'processed_at', 'completed_at', 'user', 'moderator', 'dishes']
 
 
-class CurDishesSerializer(serializers.ModelSerializer):
-    dish_url = serializers.CharField(source='dish.url')
-    dish_name = serializers.CharField(source='dish.title')
-
-    class Meta:
-        model = DishesOrders
-        fields = ['dish_name', 'dish_url', 'quantity']
-
 class FullOrderSerializer(serializers.ModelSerializer):
     dishes = CurDishesSerializer(many=True, read_only=True)
     order = models.ForeignKey('Orders', models.DO_NOTHING, related_name='dishes', blank=True, null=True)
     user = serializers.StringRelatedField(read_only=True)
+    moderator = serializers.StringRelatedField(read_only=True)
+
     class Meta:
         model = Orders
         fields = ['id', 'status', 'created_at', 'processed_at', 'completed_at', 'user', 'moderator', 'dishes']
@@ -71,3 +77,26 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuthUser
         fields = "__all__"
+
+
+
+
+class DishesSerializer1(serializers.ModelSerializer):
+    class Meta:
+        model = Dishes
+        fields = ('id', 'title', 'price', 'tags', 'url')
+
+class DishesOrdersSerializer1(serializers.ModelSerializer):
+    dish = DishesSerializer1()
+    
+    class Meta:
+        model = DishesOrders
+        fields = ('id', 'dish', 'quantity')
+
+class OrdersSerializer1(serializers.ModelSerializer):
+    dishes = DishesOrdersSerializer1(many=True)
+    user = serializers.StringRelatedField(read_only=True)
+    
+    class Meta:
+        model = Orders
+        fields = ('id', 'status', 'created_at', 'processed_at', 'completed_at', 'user', 'moderator', 'dishes')
