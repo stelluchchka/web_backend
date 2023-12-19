@@ -255,10 +255,16 @@ class OrderViewSet(APIView):
     permission_classes = [IsManagerOrReadOnly]
 
     def get(self, request, pk, format=None):                                # 1 заказ
+        try: 
+            ssid = request.COOKIES["session_id"]
+            email = session_storage.get(ssid).decode('utf-8')
+            cur_user = AuthUser.objects.get(email=email)
+        except:
+            return Response("Сессия не найдена", status=status.HTTP_404_NOT_FOUND)
         try:
-            order = Orders.objects.get(id=pk)
+            order = Orders.objects.filter(user=cur_user).get(id=pk)
         except Orders.DoesNotExist:
-            return Response(f"Заказа с таким id нет")
+            return Response(f"Заказа с таким id нет", status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.serializer_class(order)
         return Response(serializer.data)
