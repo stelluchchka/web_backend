@@ -152,14 +152,14 @@ AUTH_USER_MODEL = 'app.AuthUser'
 #     ]
 # }
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://192.168.1.111:5001"
+    # "http://localhost:3000",
+    # "http://localhost:8000",
+    "http://192.168.1.111:8081"
 ]
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://192.168.1.111:5001"
+    # "http://localhost:3000",
+    # "http://localhost:8000",
+    "http://192.168.1.111:8081"
 ]
 CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
 CORS_ALLOW_HEADERS = [
