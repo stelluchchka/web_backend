@@ -430,7 +430,6 @@ def ToOrder(request):
 
 @api_view(['GET'])
 def Calculate(request):                         # Обработка ответа от второго сервиса
-    print("start")
     order_id = int(request.data.get('order_id'))
     token = 4321
     second_service_url = "http://localhost:8080/calc"
@@ -459,26 +458,20 @@ def Calculate(request):                         # Обработка ответ�
 @api_view(['PUT'])
 @permission_classes([AllowAny])
 def Result(request, format=None):                # Обновление данных
-    print("вызвалось")
-
     if request.method != 'PUT':
         return Response({'error': 'Метод не разрешен'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     order_id = request.data.get('order_id')
-    print("SDFGHJKJHGFGHJKL")
-    if (request.data.get('is_success') > 60):
+    if (request.data.get('is_success') > 20):
         result = "оплата прошла успешно!"
     else: 
         result = "оплата не прошла!"
-    print("res1 ", result)
     if not order_id:
         return Response({'error': 'Отсутствуют необходимые данные'}, status=status.HTTP_400_BAD_REQUEST)
-    print("res2 ", result)
     try:
         order = Orders.objects.get(id=order_id)
     except Orders.DoesNotExist:
         return Response({'error': 'Отклик не найден'}, status=status.HTTP_404_NOT_FOUND)
-    print("res3 ", result)
 
     order.is_success = result
     order.save()
