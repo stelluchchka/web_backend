@@ -12,6 +12,7 @@ from django.http import HttpResponse
 from django.conf import settings
 
 import redis
+import requests
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from django.views.decorators.csrf import csrf_exempt
@@ -66,7 +67,7 @@ def logout_view(request):
         return HttpResponse(response_data, status=status.HTTP_200_OK)
     else:
         response_data = {'Error: Session does not exist'}
-    return HttpResponse(response_data, status=status.HTTP_400_BAD_REQUEST)
+    return HttpResponse(response_data, status=status.HTTP_403_FORBIDDEN)
 
 @api_view(['GET'])
 @permission_classes([IsAuth])
@@ -220,21 +221,21 @@ class OrdersViewSet(APIView):
     permission_classes=[IsManagerOrReadOnly]
 
     def get(self, request, format=None):                                  # все заказы
-        ssid = request.COOKIES["session_id"]
         try:
+            ssid = request.COOKIES["session_id"]
             email = session_storage.get(ssid).decode('utf-8')
             cur_user = AuthUser.objects.get(email=email)
         except:
-            return HttpResponse("Сессия не найдена", status=status.HTTP_404_NOT_FOUND)
+            return HttpResponse("Сессия не найдена", status=status.HTTP_403_FORBIDDEN)
         date_format = "%Y-%m-%d"
         start_date_str = request.query_params.get("start", '2000-01-01')
         end_date_str = request.query_params.get("end", '3023-12-31')
         start = datetime.strptime(start_date_str, date_format).date()
         end = datetime.strptime(end_date_str, date_format).date()
         stats = request.query_params.get("status", '')
-        filters = ~Q(stats="отменен") & Q(created_at__range=(start, end))
+        filters = ~Q(status="отменен") & Q(created_at__range=(start, end))
         if stats != '':
-            filters &= Q(stats=stats)
+            filters &= Q(status=stats)
             
         if bool(cur_user.is_staff or cur_user.is_superuser):
             orders = Orders.objects.filter(filters).order_by('-created_at')
@@ -260,7 +261,7 @@ class OrderViewSet(APIView):
             email = session_storage.get(ssid).decode('utf-8')
             cur_user = AuthUser.objects.get(email=email)
         except:
-            return Response("Сессия не найдена", status=status.HTTP_404_NOT_FOUND)
+            return Response("Сессия не найдена", status=status.HTTP_403_FORBIDDEN)
         try:
             order = Orders.objects.filter(user=cur_user).get(id=pk)
         except Orders.DoesNotExist:
@@ -294,7 +295,7 @@ class DishesOrdersViewSet(APIView):
             cur_user = AuthUser.objects.get(email=email)
             order=Orders.objects.get(user=cur_user, status="зарегистрирован") # заказ определенного пользователя
         except:
-            return Response("нет такого заказа")
+            return Response("Сессия не найдена", status=status.HTTP_403_FORBIDDEN)
         dishes_orders = DishesOrders.objects.get(dish_id=pk, order_id=order.id)
         dishes_orders.quantity = request.data["quantity"]
         dishes_orders.save()
@@ -311,7 +312,7 @@ class DishesOrdersViewSet(APIView):
             cur_user = AuthUser.objects.get(email=email)
             order=Orders.objects.get(user=cur_user, status="зарегистрирован") # заказ определенного пользователя
         except:
-            return Response("нет такого заказа")
+            return Response("Сессия не найдена", status=status.HTTP_403_FORBIDDEN)
         dishes_orders = get_object_or_404(DishesOrders, dish_id=pk, order_id=order.id)
         dishes_orders.delete()
 
@@ -327,12 +328,12 @@ class DishesOrdersViewSet(APIView):
 @permission_classes([IsAuthenticated])
 @api_view(['POST'])                                  # добавить блюдо в заказ
 def PostDishToOrder(request, pk):
-    ssid = request.COOKIES["session_id"]
     try:
+        ssid = request.COOKIES["session_id"]
         email = session_storage.get(ssid).decode('utf-8')
         cur_user = AuthUser.objects.get(email=email)
     except:
-        return Response('Сессия не найдена')
+        return Response("Сессия не найдена", status=status.HTTP_403_FORBIDDEN)
     try: 
         order=Orders.objects.filter(user=cur_user, status="зарегистрирован").latest('created_at') # заказ определенного пользователя
     except:
@@ -375,10 +376,12 @@ def ConfirmOrder(request, pk):
         return Response(f"Заказа с таким id нет")
 
     order = Orders.objects.get(id=pk)
-    ssid = request.COOKIES["session_id"]
-    email = session_storage.get(ssid).decode('utf-8')
-    cur_user = AuthUser.objects.get(email=email)
-
+    try:
+        ssid = request.COOKIES["session_id"]
+        email = session_storage.get(ssid).decode('utf-8')
+        cur_user = AuthUser.objects.get(email=email)
+    except:
+        return Response("Сессия не найдена", status=status.HTTP_403_FORBIDDEN)
     if bool(cur_user.is_staff == False and cur_user.is_superuser == False):
         return Response("Нет прав", status=status.HTTP_403_FORBIDDEN)
     else:
@@ -410,10 +413,10 @@ def ToOrder(request):
         except:
             return Response({'error: no order'}, status=status.HTTP_404_NOT_FOUND)
     except:
-        return Response('Сессия не найдена')
+        return Response({'Сессия не найдена'}, status=status.HTTP_403_FORBIDDEN)
 
     if order.status != "зарегистрирован":
-        return Response("Такой заказ не зарегистрован", status=status.HTTP_400_BAD_REQUEST)
+        return Response("Такой заказ не зарегистрован", status=status.HTTP_404_NOT_FOUND)
     if request.data["status"] not in ["отменен", "сформирован"]:
         return Response("Ошибка", status=status.HTTP_400_BAD_REQUEST)
 
@@ -421,5 +424,63 @@ def ToOrder(request):
     order.processed_at=datetime.now()           #.strftime("%d.%m.%Y %H:%M:%S")
     order.save()
 
+    serializer = OrderSerializer(order)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def Calculate(request):                         # Обработка ответа от второго сервиса
+    print("start")
+    order_id = int(request.data.get('order_id'))
+    token = 4321
+    second_service_url = "http://localhost:8080/calc"
+    data = {
+        'order_id': order_id,
+        'token': token
+    }
+
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    try:
+        order = requests.post(second_service_url, data=data)
+        exp = Orders.objects.get(id=order_id)
+    except:
+        return Response('Нет подключения', status=status.HTTP_404_NOT_FOUND)
+    if order.status_code == 200:
+        exp.is_success = "ожидание оплаты"
+        exp.save()
+        serializer = OrderSerializer(exp)
+        return Response(serializer.data)
+    else:
+        return Response(data={'error': 'Запрос завершился с кодом: {}'.format(order.status_code)},
+                        status=order.status_code)
+
+@api_view(['PUT'])
+@permission_classes([AllowAny])
+def Result(request, format=None):                # Обновление данных
+    print("вызвалось")
+
+    if request.method != 'PUT':
+        return Response({'error': 'Метод не разрешен'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    order_id = request.data.get('order_id')
+    print("SDFGHJKJHGFGHJKL")
+    if (request.data.get('is_success') > 60):
+        result = "оплата прошла успешно!"
+    else: 
+        result = "оплата не прошла!"
+    print("res1 ", result)
+    if not order_id:
+        return Response({'error': 'Отсутствуют необходимые данные'}, status=status.HTTP_400_BAD_REQUEST)
+    print("res2 ", result)
+    try:
+        order = Orders.objects.get(id=order_id)
+    except Orders.DoesNotExist:
+        return Response({'error': 'Отклик не найден'}, status=status.HTTP_404_NOT_FOUND)
+    print("res3 ", result)
+
+    order.is_success = result
+    order.save()
     serializer = OrderSerializer(order)
     return Response(serializer.data)

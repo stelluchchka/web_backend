@@ -94,14 +94,12 @@ class Orders(models.Model):
     completed_at = models.DateTimeField(blank=True, null=True)
     user = models.ForeignKey('AuthUser', on_delete=models.DO_NOTHING, null=False, blank=False)
     moderator = models.ForeignKey('AuthUser', models.DO_NOTHING, related_name='orders_moderator_set', blank=True, null=True)
+    is_success = models.CharField()
     def __str__(self):
         return f'{self.status} {self.user}'
     class Meta:
         managed = False
         db_table = 'orders'
-
-
-
 
 class DjangoSession(models.Model):
     session_key = models.CharField(primary_key=True, max_length=40)
@@ -120,8 +118,6 @@ class DjangoContentType(models.Model):
         managed = False
         db_table = 'django_content_type'
         unique_together = (('app_label', 'model'),)
-
-
 
 
 class AuthGroup(models.Model):

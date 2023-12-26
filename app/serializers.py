@@ -30,7 +30,7 @@ class DishOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DishesOrders
-        fields = "__all__"
+        fields = ['dish', 'order']
 
 
 class DishesSerializer(serializers.ModelSerializer):
@@ -58,7 +58,7 @@ class FullOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Orders
-        fields = ['id', 'status', 'created_at', 'processed_at', 'completed_at', 'user', 'moderator', 'dishes']
+        fields = ['id', 'status', 'created_at', 'processed_at', 'completed_at', 'is_success', 'user', 'moderator', 'dishes']
 
 class UserSerializer(serializers.ModelSerializer):
     is_staff = serializers.BooleanField(default=False, required=False)
@@ -91,7 +91,7 @@ class DishesOrdersSerializer1(serializers.ModelSerializer):
     
     class Meta:
         model = DishesOrders
-        fields = ('id', 'dish', 'quantity')
+        fields = ('dish', 'quantity')
 
 class OrdersSerializer1(serializers.ModelSerializer):
     dishes = DishesOrdersSerializer1(many=True)
@@ -99,4 +99,4 @@ class OrdersSerializer1(serializers.ModelSerializer):
     
     class Meta:
         model = Orders
-        fields = ('id', 'status', 'created_at', 'processed_at', 'completed_at', 'user', 'moderator', 'dishes')
+        fields = ('id', 'status', 'created_at', 'processed_at', 'completed_at', 'user', 'moderator', 'is_success', 'dishes')
