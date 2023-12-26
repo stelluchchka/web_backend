@@ -400,20 +400,20 @@ def ConfirmOrder(request, pk):
 
 @swagger_auto_schema(method='put', request_body=OrderSerializer)
 @api_view(['PUT'])                                  # статусы пользователя
-@permission_classes([IsAuth])
+@permission_classes([IsAuthenticated])
 def ToOrder(request):
     try:
         ssid = request.COOKIES["session_id"]
         email = session_storage.get(ssid).decode('utf-8')
         cur_user = AuthUser.objects.get(email=email)
-        # заказ определенного пользователя
-        try: 
-            order=Orders.objects.filter(user=cur_user, status="зарегистрирован").latest('created_at')
-        # заказа-черновика нет
-        except:
-            return Response({'error: no order'}, status=status.HTTP_404_NOT_FOUND)
     except:
         return Response({'Сессия не найдена'}, status=status.HTTP_403_FORBIDDEN)
+    # заказ определенного пользователя
+    try: 
+        order=Orders.objects.filter(user=cur_user, status="зарегистрирован").latest('created_at')
+    # заказа-черновика нет
+    except:
+        return Response({'error: no order'})
 
     if order.status != "зарегистрирован":
         return Response("Такой заказ не зарегистрован", status=status.HTTP_404_NOT_FOUND)
