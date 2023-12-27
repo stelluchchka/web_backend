@@ -466,7 +466,7 @@ def Result(request, format=None):                # Обновление данн
         return Response({'error': 'Метод не разрешен'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     order_id = request.data.get('order_id')
-    if (request.data.get('is_success') > 20):
+    if (int(request.data.get('is_success')) > 20):
         result = "оплата прошла успешно!"
     else: 
         result = "оплата не прошла!"
