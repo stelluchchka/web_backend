@@ -13,11 +13,6 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class CurDishesSerializer(serializers.ModelSerializer):
-    # id=serializers.CharField(source='dish.id')
-    # title=serializers.CharField(source='dish.title')
-    # price=serializers.DecimalField(max_digits=10, decimal_places=2, source='dish.price')
-    # tags=serializers.CharField(source='dish.tags')
-    # url=serializers.CharField(source='dish.url')
     class Meta:
         model = Dishes
         fields = ['id', 'title', 'price', 'tags', 'url']
@@ -40,14 +35,6 @@ class DishesSerializer(serializers.ModelSerializer):
     class Meta:
         model = DishesOrders
         fields = "__all__"
-
-
-# class FullOrderSerializer(serializers.ModelSerializer):
-#     dishes = DishSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = Orders
-#         fields = ['id', 'status', 'created_at', 'processed_at', 'completed_at', 'user', 'moderator', 'dishes']
 
 
 class FullOrderSerializer(serializers.ModelSerializer):
@@ -81,17 +68,22 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 
-class DishesSerializer1(serializers.ModelSerializer):
-    class Meta:
-        model = Dishes
-        fields = ('id', 'title', 'price', 'tags', 'url')
+# class DishesSerializer1(serializers.ModelSerializer):
+#     class Meta:
+#         model = Dishes
+#         fields = ('id', 'title', 'price', 'tags', 'url')
 
 class DishesOrdersSerializer1(serializers.ModelSerializer):
-    dish = DishesSerializer1()
+    # dish = DishesSerializer1()
+    id=serializers.CharField(source='dish.id')
+    title=serializers.CharField(source='dish.title')
+    price=serializers.DecimalField(max_digits=10, decimal_places=2, source='dish.price')
+    tags=serializers.CharField(source='dish.tags')
+    url=serializers.CharField(source='dish.url')
     
     class Meta:
         model = DishesOrders
-        fields = ('dish', 'quantity')
+        fields = ('id', 'title', 'price', 'tags', 'url', 'quantity')
 
 class OrdersSerializer1(serializers.ModelSerializer):
     dishes = DishesOrdersSerializer1(many=True)

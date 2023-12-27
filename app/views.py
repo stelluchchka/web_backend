@@ -236,13 +236,12 @@ class OrdersViewSet(APIView):
         filters = ~Q(status="отменен") & Q(created_at__range=(start, end))
         if stats != '':
             filters &= Q(status=stats)
-            
         if bool(cur_user.is_staff or cur_user.is_superuser):
-            orders = Orders.objects.filter(filters).order_by('-created_at')
+            orders = Orders.objects.filter(filters).exclude(status="зарегистрирован").order_by('-created_at')
             serializer = self.serializer_class(orders, many=True)
         else:
             try:
-                order = Orders.objects.filter(user=cur_user).order_by('-created_at')
+                order = Orders.objects.filter(user=cur_user).exclude(status="зарегистрирован").order_by('-created_at')
                 serializer = self.serializer_class(order, many=True)
             except:
                 return Response('Заказов нет')
@@ -297,7 +296,7 @@ class DishesOrdersViewSet(APIView):
         except:
             return Response("Сессия не найдена", status=status.HTTP_403_FORBIDDEN)
         dishes_orders = DishesOrders.objects.get(dish_id=pk, order_id=order.id)
-        dishes_orders.quantity = request.data["quantity"]
+        dishes_orders.quantity = dishes_orders.quantity + 1
         dishes_orders.save()
 
         dishes_orders = DishesOrders.objects.filter(order_id=order.id)
