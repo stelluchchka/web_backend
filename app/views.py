@@ -296,8 +296,13 @@ class DishesOrdersViewSet(APIView):
         except:
             return Response("Сессия не найдена", status=status.HTTP_403_FORBIDDEN)
         dishes_orders = DishesOrders.objects.get(dish_id=pk, order_id=order.id)
-        dishes_orders.quantity = dishes_orders.quantity + 1
-        dishes_orders.save()
+
+        try:                                                                # если передем в теле кол-во
+            dishes_orders.quantity = request.data["quantity"]
+            dishes_orders.save()
+        except:                                                            # если не передем в теле ничего
+            dishes_orders.quantity = dishes_orders.quantity + 1
+            dishes_orders.save()
 
         dishes_orders = DishesOrders.objects.filter(order_id=order.id)
         serializer = self.serializer_class(dishes_orders, many=True)
