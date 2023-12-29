@@ -52,8 +52,3 @@ urlpatterns = [
 
     # Swagger
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-
-    # Async-service
-    path('calc', views.Calculate, name = 'calc'),
-    path('request/result/', views.Result, name = 'result'),
-]
