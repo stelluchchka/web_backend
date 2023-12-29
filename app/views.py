@@ -466,11 +466,14 @@ def Result(request, format=None):                # Обновление данн
         return Response({'error': 'Метод не разрешен'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     order_id = request.data.get('order_id')
-    if (int(request.data.get('is_success')) > 20):
-        result = "оплата прошла успешно!"
-    else: 
-        result = "оплата не прошла!"
-    if not order_id:
+    try:
+        if (int(request.data.get('token')) != 4321):
+            return Response({'error'}, status=status.HTTP_403_FORBIDDEN)
+        if (int(request.data.get('is_success')) > 20):
+            result = "оплата прошла успешно!"
+        else: 
+            result = "оплата не прошла!"
+    except:
         return Response({'error': 'Отсутствуют необходимые данные'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         order = Orders.objects.get(id=order_id)
