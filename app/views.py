@@ -284,7 +284,7 @@ class OrderViewSet(APIView):
 class DishesOrdersViewSet(APIView):
     model_class = DishesOrders
     serializer_class = DishOrderSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuth]
 
     @swagger_auto_schema(request_body=DishOrderSerializer)
     def put(self, request, pk, format=None):                               # изменение м-м(кол-во), передаем id блюда
