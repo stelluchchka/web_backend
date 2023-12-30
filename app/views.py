@@ -404,7 +404,7 @@ def ConfirmOrder(request, pk):
 
 @swagger_auto_schema(method='put', request_body=OrderSerializer)
 @api_view(['PUT'])                                  # статусы пользователя
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuth])
 def ToOrder(request):
     try:
         ssid = request.COOKIES["session_id"]
