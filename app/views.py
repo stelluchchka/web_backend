@@ -217,7 +217,7 @@ class DishViewSet(APIView):
 
 class OrdersViewSet(APIView):
     model_class = Orders
-    serializer_class = OrdersSerializer1
+    serializer_class = FullOrderSerializer
     permission_classes=[IsManagerOrReadOnly]
 
     def get(self, request, format=None):                                  # все заказы
@@ -251,7 +251,7 @@ class OrdersViewSet(APIView):
 
 class OrderViewSet(APIView):
     model_class = Orders
-    serializer_class = OrdersSerializer1
+    serializer_class = FullOrderSerializer
     permission_classes = [IsManagerOrReadOnly]
 
     def get(self, request, pk, format=None):                                # 1 заказ
