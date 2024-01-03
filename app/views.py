@@ -114,7 +114,7 @@ class DishesViewSet(APIView):
         if title != '':
             filters &= Q(title=title)
 
-        dish = Dishes.objects.filter(filters)
+        dish = Dishes.objects.filter(filters).order_by('title')
         dish_serializer = self.serializer_class(dish, many=True)
 
         try:
