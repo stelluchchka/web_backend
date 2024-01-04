@@ -233,15 +233,17 @@ class OrdersViewSet(APIView):
         start = datetime.strptime(start_date_str, date_format).date()
         end = datetime.strptime(end_date_str, date_format).date()
         stats = request.query_params.get("status", '')
-        filters = ~Q(status="отменен") & Q(created_at__range=(start, end))
+        filters = ~Q(status="отменен") & ~Q(status="зарегистрирован")
         if stats != '':
             filters &= Q(status=stats)
         if bool(cur_user.is_staff or cur_user.is_superuser):
-            orders = Orders.objects.filter(filters).exclude(status="зарегистрирован").order_by('-created_at')
+            filters &= Q(created_at__range=(start, end))
+            orders = Orders.objects.filter(filters).order_by('-created_at')
             serializer = self.serializer_class(orders, many=True)
         else:
             try:
-                order = Orders.objects.filter(user=cur_user).exclude(status="зарегистрирован").order_by('-created_at')
+                filters &= Q(user=cur_user)
+                order = Orders.objects.filter(filters).order_by('-created_at')
                 serializer = self.serializer_class(order, many=True)
             except:
                 return Response('Заказов нет')
@@ -304,8 +306,8 @@ class DishesOrdersViewSet(APIView):
             dishes_orders.quantity = dishes_orders.quantity + 1
             dishes_orders.save()
 
-        dishes_orders = DishesOrders.objects.filter(order_id=order.id)
-        serializer = self.serializer_class(dishes_orders, many=True)
+        dishes_orders = DishesOrders.objects.get(order_id=order.id, dish_id=pk)
+        serializer = self.serializer_class(dishes_orders)
         return Response(serializer.data)
 
     @swagger_auto_schema(request_body=DishOrderSerializer)
@@ -328,7 +330,7 @@ class DishesOrdersViewSet(APIView):
 
 
 # Dishes
-@swagger_auto_schema(method='post', request_body=OrderSerializer)
+@swagger_auto_schema(method='post', request_body=DishSerializer)
 @permission_classes([IsAuthenticated])
 @api_view(['POST'])                                  # добавить блюдо в заказ
 def PostDishToOrder(request, pk):
@@ -365,10 +367,10 @@ def PostDishToOrder(request, pk):
         )
         dish_order.save()
 
-    dishes_orders = DishesOrders.objects.get(order_id=order_id, dish_id=dish_id)  # выводим 1 м-м
-    serializer = DishOrderSerializer(dishes_orders)
-    # orders = Orders.objects.get(id=order_id)  # выводим 1 заказ
-    # serializer = OrderSerializer(orders)
+    # dishes_orders = DishesOrders.objects.get(order_id=order_id, dish_id=dish_id)  # выводим 1 м-м
+    # serializer = DishOrderSerializer(dishes_orders)
+    orders = Orders.objects.get(id=order_id)  # выводим 1 заказ
+    serializer = OrderSerializer(orders)
     return Response(serializer.data)
 
 #Orders
