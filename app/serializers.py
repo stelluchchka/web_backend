@@ -51,7 +51,7 @@ class DishesFromOrderSerializer(serializers.ModelSerializer):
     # dish = DishesSerializer1()
     id=serializers.CharField(source='dish.id')
     title=serializers.CharField(source='dish.title')
-    price=serializers.DecimalField(max_digits=10, decimal_places=2, source='dish.price')
+    price=serializers.DecimalField(max_digits=10, decimal_places=0, source='dish.price')
     tags=serializers.CharField(source='dish.tags')
     url=serializers.CharField(source='dish.url')
     
