@@ -33,7 +33,7 @@ session_storage = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDI
 # moderator = AuthUser(id=4, email="moderator@e.ru", password=000, is_staff = True)
 
 @csrf_exempt
-@swagger_auto_schema(method='post', request_body=UserSerializer)
+@swagger_auto_schema(method='post')
 @api_view(['Post'])
 def login_view(request):
     email = request.data.get("email")
@@ -229,14 +229,28 @@ class OrdersViewSet(APIView):
             return HttpResponse("Сессия не найдена", status=status.HTTP_403_FORBIDDEN)
         date_format = "%Y-%m-%d"
         start_date_str = request.query_params.get("start", '2000-01-01')
-        end_date_str = request.query_params.get("end", '3023-12-31')
+        if start_date_str == '':
+            start_date_str = '2000-01-01'
         start = datetime.strptime(start_date_str, date_format).date()
+
+        end_date_str = request.query_params.get("end", '3023-12-31')
+        if end_date_str == '':
+            end_date_str = '3023-12-31'
         end = datetime.strptime(end_date_str, date_format).date()
-        stats = request.query_params.get("status", '')
+
+        statusVal = request.query_params.get("status", '')
+        emailVal = request.query_params.get("email", '')
+
         filters = ~Q(status="отменен") & ~Q(status="зарегистрирован")
-        if stats != '':
-            filters &= Q(status=stats)
         if bool(cur_user.is_staff or cur_user.is_superuser):
+            if statusVal != '':
+                filters &= Q(status=statusVal)
+            if emailVal != '':
+                try:
+                    found_user = AuthUser.objects.get(email=emailVal)
+                    filters &= Q(user=found_user)
+                except:
+                    filters &= Q(user=-1)
             filters &= Q(created_at__range=(start, end))
             orders = Orders.objects.filter(filters).order_by('-created_at')
             serializer = self.serializer_class(orders, many=True)
@@ -271,7 +285,7 @@ class OrderViewSet(APIView):
         serializer = self.serializer_class(order)
         return Response(serializer.data)
     
-    @swagger_auto_schema(request_body=OrderSerializer)
+    @swagger_auto_schema()
     def delete(self, request, pk, format=None):                             # удалить заказ
         if not Orders.objects.filter(id=pk).exists():
             return Response(f"Заказа с таким id нет")
@@ -288,7 +302,7 @@ class DishesOrdersViewSet(APIView):
     serializer_class = DishOrderSerializer
     permission_classes = [IsAuth]
 
-    @swagger_auto_schema(request_body=DishOrderSerializer)
+    @swagger_auto_schema()
     def put(self, request, pk, format=None):                               # изменение м-м(кол-во), передаем id блюда
         try:
             ssid = request.COOKIES["session_id"]
@@ -310,7 +324,7 @@ class DishesOrdersViewSet(APIView):
         serializer = self.serializer_class(dishes_orders)
         return Response(serializer.data)
 
-    @swagger_auto_schema(request_body=DishOrderSerializer)
+    @swagger_auto_schema()
     def delete(self, request, pk, format=None):                              # удаление м-м, передаем id блюда
         try: 
             ssid = request.COOKIES["session_id"]
@@ -330,12 +344,14 @@ class DishesOrdersViewSet(APIView):
 
 
 # Dishes
-@swagger_auto_schema(method='post', request_body=DishSerializer)
+@swagger_auto_schema(method='post')
 @permission_classes([IsAuthenticated])
 @api_view(['POST'])                                  # добавить блюдо в заказ
 def PostDishToOrder(request, pk):
     try:
+        print(request)
         ssid = request.COOKIES["session_id"]
+        print(ssid)
         email = session_storage.get(ssid).decode('utf-8')
         cur_user = AuthUser.objects.get(email=email)
     except:
@@ -374,7 +390,7 @@ def PostDishToOrder(request, pk):
     return Response(serializer.data)
 
 #Orders
-@swagger_auto_schema(method='put', request_body=OrderSerializer)
+@swagger_auto_schema(method='put')
 @api_view(['PUT'])                                  # статусы модератора
 @permission_classes([IsManagerOrReadOnly])
 def ConfirmOrder(request, pk):
@@ -404,7 +420,7 @@ def ConfirmOrder(request, pk):
         serializer = OrderSerializer(order)
         return Response(serializer.data)
 
-@swagger_auto_schema(method='put', request_body=OrderSerializer)
+@swagger_auto_schema(method='put')
 @api_view(['PUT'])                                  # статусы пользователя
 @permission_classes([IsAuth])
 def ToOrder(request):
