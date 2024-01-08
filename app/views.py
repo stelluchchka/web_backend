@@ -277,11 +277,16 @@ class OrderViewSet(APIView):
             cur_user = AuthUser.objects.get(email=email)
         except:
             return Response("Сессия не найдена", status=status.HTTP_403_FORBIDDEN)
-        try:
-            order = Orders.objects.filter(user=cur_user).get(id=pk)
-        except Orders.DoesNotExist:
-            return Response(f"Заказа с таким id нет", status=status.HTTP_404_NOT_FOUND)
-
+        if (cur_user.is_superuser or cur_user.is_staff):
+            try:
+                order = Orders.objects.get(id=pk)
+            except Orders.DoesNotExist:
+                return Response(f"Заказа с таким id нет", status=status.HTTP_404_NOT_FOUND)
+        else:
+            try:
+                order = Orders.objects.filter(user=cur_user).get(id=pk)
+            except Orders.DoesNotExist:
+                return Response(f"Заказа с таким id нет", status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(order)
         return Response(serializer.data)
     
