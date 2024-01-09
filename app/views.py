@@ -141,6 +141,7 @@ class DishesViewSet(APIView):
     @swagger_auto_schema(request_body=DishSerializer)
     def post(self, request, format=None):                                   # добавить блюдо
         serializer = self.serializer_class(data=request.data)
+        
         if not serializer.is_valid():
             return Response(serializer.errors)
         new_dish = serializer.save()
@@ -175,7 +176,7 @@ class DishViewSet(APIView):
         return Response(serializer.data)
 
     @swagger_auto_schema()
-    def  delete(self, request, pk, format=None):                              # удалить блюдо
+    def delete(self, request, pk, format=None):                              # удалить блюдо
         if not Dishes.objects.filter(id=pk, status="есть").exists():
             return Response(f"Такого блюда нет")
         dish = Dishes.objects.get(id=pk)
@@ -186,7 +187,8 @@ class DishViewSet(APIView):
         return Response({"message": "success"})
 
     @swagger_auto_schema(request_body=DishSerializer)
-    def  put(self, request, pk, format=None):                                 # изменить блюдо
+    def put(self, request, pk, format=None):                                 # изменить блюдо
+        print('1')
         try:
             dish = Dishes.objects.get(id=pk, status="есть")
         except Dishes.DoesNotExist:
