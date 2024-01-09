@@ -105,11 +105,11 @@ class DishesViewSet(APIView):
     def get(self, request, format=None):                                    # все блюда
         min_price = request.query_params.get("min_price", '0')
         max_price = request.query_params.get("max_price", '10000000')
-        tag = request.query_params.get("tag", 'тег')
+        tag = request.query_params.get("tag", '')
         title = request.query_params.get("title", '')
 
         filters = Q(status="есть") & Q(price__range=(min_price, max_price))
-        if tag != 'тег':
+        if tag != '':
             filters &= Q(tags=tag)
         if title != '':
             filters &= Q(title=title)
