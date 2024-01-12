@@ -33,7 +33,7 @@ session_storage = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDI
 # moderator = AuthUser(id=4, email="moderator@e.ru", password=000, is_staff = True)
 
 @csrf_exempt
-@swagger_auto_schema(method='post', request_body=UserSerializer)
+@swagger_auto_schema(method='post')
 @api_view(['Post'])
 def login_view(request):
     email = request.data.get("email")
@@ -81,7 +81,7 @@ def user_info(request):
                 "user_id": user.id,
                 "email": user.email,
                 "first_name": user.first_name,
-                "last_name": user.first_name,
+                "last_name": user.last_name,
                 "is_superuser": user.is_superuser
             }
             return Response(user_data, status=status.HTTP_200_OK)
@@ -105,16 +105,16 @@ class DishesViewSet(APIView):
     def get(self, request, format=None):                                    # все блюда
         min_price = request.query_params.get("min_price", '0')
         max_price = request.query_params.get("max_price", '10000000')
-        tag = request.query_params.get("tag", 'тег')
+        tag = request.query_params.get("tag", '')
         title = request.query_params.get("title", '')
 
         filters = Q(status="есть") & Q(price__range=(min_price, max_price))
-        if tag != 'тег':
+        if tag != '':
             filters &= Q(tags=tag)
         if title != '':
             filters &= Q(title=title)
 
-        dish = Dishes.objects.filter(filters)
+        dish = Dishes.objects.filter(filters).order_by('title')
         dish_serializer = self.serializer_class(dish, many=True)
 
         try:
@@ -141,6 +141,7 @@ class DishesViewSet(APIView):
     @swagger_auto_schema(request_body=DishSerializer)
     def post(self, request, format=None):                                   # добавить блюдо
         serializer = self.serializer_class(data=request.data)
+        
         if not serializer.is_valid():
             return Response(serializer.errors)
         new_dish = serializer.save()
@@ -175,7 +176,7 @@ class DishViewSet(APIView):
         return Response(serializer.data)
 
     @swagger_auto_schema()
-    def  delete(self, request, pk, format=None):                              # удалить блюдо
+    def delete(self, request, pk, format=None):                              # удалить блюдо
         if not Dishes.objects.filter(id=pk, status="есть").exists():
             return Response(f"Такого блюда нет")
         dish = Dishes.objects.get(id=pk)
@@ -186,7 +187,8 @@ class DishViewSet(APIView):
         return Response({"message": "success"})
 
     @swagger_auto_schema(request_body=DishSerializer)
-    def  put(self, request, pk, format=None):                                 # изменить блюдо
+    def put(self, request, pk, format=None):                                 # изменить блюдо
+        print('1')
         try:
             dish = Dishes.objects.get(id=pk, status="есть")
         except Dishes.DoesNotExist:
@@ -217,7 +219,7 @@ class DishViewSet(APIView):
 
 class OrdersViewSet(APIView):
     model_class = Orders
-    serializer_class = OrdersSerializer1
+    serializer_class = FullOrderSerializer
     permission_classes=[IsManagerOrReadOnly]
 
     def get(self, request, format=None):                                  # все заказы
@@ -229,19 +231,35 @@ class OrdersViewSet(APIView):
             return HttpResponse("Сессия не найдена", status=status.HTTP_403_FORBIDDEN)
         date_format = "%Y-%m-%d"
         start_date_str = request.query_params.get("start", '2000-01-01')
-        end_date_str = request.query_params.get("end", '3023-12-31')
+        if start_date_str == '':
+            start_date_str = '2000-01-01'
         start = datetime.strptime(start_date_str, date_format).date()
+
+        end_date_str = request.query_params.get("end", '3023-12-31')
+        if end_date_str == '':
+            end_date_str = '3023-12-31'
         end = datetime.strptime(end_date_str, date_format).date()
-        stats = request.query_params.get("status", '')
-        filters = ~Q(status="отменен") & Q(created_at__range=(start, end))
-        if stats != '':
-            filters &= Q(status=stats)
+
+        statusVal = request.query_params.get("status", '')
+        emailVal = request.query_params.get("email", '')
+
+        filters = ~Q(status="отменен") & ~Q(status="зарегистрирован")
         if bool(cur_user.is_staff or cur_user.is_superuser):
-            orders = Orders.objects.filter(filters).exclude(status="зарегистрирован").order_by('-created_at')
+            if statusVal != '':
+                filters &= Q(status=statusVal)
+            if emailVal != '':
+                try:
+                    found_user = AuthUser.objects.get(email=emailVal)
+                    filters &= Q(user=found_user)
+                except:
+                    filters &= Q(user=-1)
+            filters &= Q(created_at__range=(start, end))
+            orders = Orders.objects.filter(filters).order_by('-created_at')
             serializer = self.serializer_class(orders, many=True)
         else:
             try:
-                order = Orders.objects.filter(user=cur_user).exclude(status="зарегистрирован").order_by('-created_at')
+                filters &= Q(user=cur_user)
+                order = Orders.objects.filter(filters).order_by('-created_at')
                 serializer = self.serializer_class(order, many=True)
             except:
                 return Response('Заказов нет')
@@ -251,7 +269,7 @@ class OrdersViewSet(APIView):
 
 class OrderViewSet(APIView):
     model_class = Orders
-    serializer_class = OrdersSerializer1
+    serializer_class = FullOrderSerializer
     permission_classes = [IsManagerOrReadOnly]
 
     def get(self, request, pk, format=None):                                # 1 заказ
@@ -261,15 +279,20 @@ class OrderViewSet(APIView):
             cur_user = AuthUser.objects.get(email=email)
         except:
             return Response("Сессия не найдена", status=status.HTTP_403_FORBIDDEN)
-        try:
-            order = Orders.objects.filter(user=cur_user).get(id=pk)
-        except Orders.DoesNotExist:
-            return Response(f"Заказа с таким id нет", status=status.HTTP_404_NOT_FOUND)
-
+        if (cur_user.is_superuser or cur_user.is_staff):
+            try:
+                order = Orders.objects.get(id=pk)
+            except Orders.DoesNotExist:
+                return Response(f"Заказа с таким id нет", status=status.HTTP_404_NOT_FOUND)
+        else:
+            try:
+                order = Orders.objects.filter(user=cur_user).get(id=pk)
+            except Orders.DoesNotExist:
+                return Response(f"Заказа с таким id нет", status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(order)
         return Response(serializer.data)
     
-    @swagger_auto_schema(request_body=OrderSerializer)
+    @swagger_auto_schema()
     def delete(self, request, pk, format=None):                             # удалить заказ
         if not Orders.objects.filter(id=pk).exists():
             return Response(f"Заказа с таким id нет")
@@ -284,9 +307,9 @@ class OrderViewSet(APIView):
 class DishesOrdersViewSet(APIView):
     model_class = DishesOrders
     serializer_class = DishOrderSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuth]
 
-    @swagger_auto_schema(request_body=DishOrderSerializer)
+    @swagger_auto_schema()
     def put(self, request, pk, format=None):                               # изменение м-м(кол-во), передаем id блюда
         try:
             ssid = request.COOKIES["session_id"]
@@ -304,11 +327,11 @@ class DishesOrdersViewSet(APIView):
             dishes_orders.quantity = dishes_orders.quantity + 1
             dishes_orders.save()
 
-        dishes_orders = DishesOrders.objects.filter(order_id=order.id)
-        serializer = self.serializer_class(dishes_orders, many=True)
+        dishes_orders = DishesOrders.objects.get(order_id=order.id, dish_id=pk)
+        serializer = self.serializer_class(dishes_orders)
         return Response(serializer.data)
 
-    @swagger_auto_schema(request_body=DishOrderSerializer)
+    @swagger_auto_schema()
     def delete(self, request, pk, format=None):                              # удаление м-м, передаем id блюда
         try: 
             ssid = request.COOKIES["session_id"]
@@ -328,12 +351,14 @@ class DishesOrdersViewSet(APIView):
 
 
 # Dishes
-@swagger_auto_schema(method='post', request_body=OrderSerializer)
+@swagger_auto_schema(method='post')
 @permission_classes([IsAuthenticated])
 @api_view(['POST'])                                  # добавить блюдо в заказ
 def PostDishToOrder(request, pk):
     try:
+        print(request)
         ssid = request.COOKIES["session_id"]
+        print(ssid)
         email = session_storage.get(ssid).decode('utf-8')
         cur_user = AuthUser.objects.get(email=email)
     except:
@@ -365,14 +390,14 @@ def PostDishToOrder(request, pk):
         )
         dish_order.save()
 
-    dishes_orders = DishesOrders.objects.get(order_id=order_id, dish_id=dish_id)  # выводим 1 м-м
-    serializer = DishOrderSerializer(dishes_orders)
-    # orders = Orders.objects.get(id=order_id)  # выводим 1 заказ
-    # serializer = OrderSerializer(orders)
+    # dishes_orders = DishesOrders.objects.get(order_id=order_id, dish_id=dish_id)  # выводим 1 м-м
+    # serializer = DishOrderSerializer(dishes_orders)
+    orders = Orders.objects.get(id=order_id)  # выводим 1 заказ
+    serializer = OrderSerializer(orders)
     return Response(serializer.data)
 
 #Orders
-@swagger_auto_schema(method='put', request_body=OrderSerializer)
+@swagger_auto_schema(method='put')
 @api_view(['PUT'])                                  # статусы модератора
 @permission_classes([IsManagerOrReadOnly])
 def ConfirmOrder(request, pk):
@@ -402,9 +427,9 @@ def ConfirmOrder(request, pk):
         serializer = OrderSerializer(order)
         return Response(serializer.data)
 
-@swagger_auto_schema(method='put', request_body=OrderSerializer)
+@swagger_auto_schema(method='put')
 @api_view(['PUT'])                                  # статусы пользователя
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuth])
 def ToOrder(request):
     try:
         ssid = request.COOKIES["session_id"]
@@ -432,7 +457,7 @@ def ToOrder(request):
     return Response(serializer.data)
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 def Calculate(request):                         # Обработка ответа от второго сервиса
     order_id = int(request.data.get('order_id'))
     token = 4321
@@ -467,18 +492,20 @@ def Result(request, format=None):                # Обновление данн
 
     order_id = request.data.get('order_id')
     try:
+        print(request.data.get('token'))
+        print(int(request.data.get('is_success')))
         if (int(request.data.get('token')) != 4321):
             return Response({'error'}, status=status.HTTP_403_FORBIDDEN)
         if (int(request.data.get('is_success')) > 20):
-            result = "оплата прошла успешно!"
+            result = "прошла"
         else: 
-            result = "оплата не прошла!"
+            result = "не прошла!"
     except:
         return Response({'error': 'Отсутствуют необходимые данные'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         order = Orders.objects.get(id=order_id)
     except Orders.DoesNotExist:
-        return Response({'error': 'Отклик не найден'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'Заказ не найден'}, status=status.HTTP_404_NOT_FOUND)
 
     order.is_success = result
     order.save()
