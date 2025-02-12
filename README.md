@@ -1,12 +1,12 @@
 # Backend для системы заказов блюд быстрого питания
 
-## Репозиторий фронтенда
+- Репозиторий фронтенда:
 [https://github.com/stelluchchka/web_frontend](https://github.com/stelluchchka/web_frontend)
 
-## Репозиторий нативного приложения
+- Репозиторий нативного приложения:
 [https://github.com/stelluchchka/dishes_native_app](https://github.com/stelluchchka/dishes_native_app)
 
-## Репозиторий асинхронного сервиса на Go
+- Репозиторий асинхронного сервиса на Go:
 [https://github.com/stelluchchka/async_service](https://github.com/stelluchchka/async_service)
 
 
